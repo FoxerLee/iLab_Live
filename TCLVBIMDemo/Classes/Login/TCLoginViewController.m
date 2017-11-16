@@ -106,7 +106,7 @@
         if (userInfo) {
             _loginParam.identifier = userInfo.identifier;
             _loginParam.userSig = [[TLSHelper getInstance] getTLSUserSig:userInfo.identifier];
-            _loginParam.tokenTime = [[NSDate date] timeIntervalSince1970];
+            _loginParam.tokenTime = (NSInteger) [[NSDate date] timeIntervalSince1970];
             
             [self loginIMSDK];
         }
@@ -232,6 +232,7 @@
     } else {
         [_pwdTextField sizeWith:CGSizeMake(screen_width - 50, 33)];
     }
+    [_pwdTextField layoutBelow:_lineView1 margin: 10];
     [_pwdTextField layoutBelow:_lineView1 margin:6];
     [_pwdTextField alignParentLeftWithMargin:25];
     
@@ -253,7 +254,7 @@
     _accountTextField.keyboardType = UIKeyboardTypeDefault;
     [_pwdTextField setPlaceholder:@"输入密码"];
     [_pwdTextField setText:@""];
-    
+
     _pwdTextField.secureTextEntry = YES;
     
     _accountTextField.attributedPlaceholder = [[NSAttributedString alloc] initWithString:_accountTextField.placeholder attributes:@{NSForegroundColorAttributeName: [UIColor colorWithWhite:1 alpha:0.5]}];

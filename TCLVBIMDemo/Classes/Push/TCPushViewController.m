@@ -680,7 +680,6 @@
 
 -(void) sliderValueChange:(UISlider*) obj
 {
-    // todo
     if (obj.tag == 0) { //美颜
         _beauty_level = obj.value;
         [_txLivePublisher setBeautyFilterDepth:_beauty_level setWhiteningFilterDepth:_whitening_level];

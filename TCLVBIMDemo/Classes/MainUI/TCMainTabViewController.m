@@ -61,20 +61,36 @@ typedef enum : NSUInteger {
 - (void)setup {
     UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, -15, self.tabBar.width, 64)];
     imageView.contentMode = UIViewContentModeScaleAspectFill;
-    [imageView setImage:[UIImage imageNamed:@"blur"]];
+    [imageView setImage:[UIImage imageNamed:@"blur_new"]];
     [self.tabBar insertSubview:imageView atIndex:0];
     
     _showVC = [TCLiveListViewController new];
     _showVC.listener = self;
-    
+
+    //TODO: 替换v1 v2两个 UIViewController
+    UIViewController *v1 = [UIViewController new];
+    UIViewController *v2 = [UIViewController new];
     UIViewController *_ = [UIViewController new];
     UIViewController *v3 = [TCUserInfoViewController new];
-    self.viewControllers = @[_showVC, _, v3];
-    
-    [self addChildViewController:_showVC imageName:@"video_normal" selectedImageName:@"video_click" title:nil];
+    self.viewControllers = @[_showVC,v1, _, v2, v3];
+
+    NSMutableDictionary *normalFontAttrs = [NSMutableDictionary dictionary];
+    normalFontAttrs[NSForegroundColorAttributeName] = UIColorFromRGB(0xffffff);
+    NSMutableDictionary *selectFontAttrs = [NSMutableDictionary dictionary];
+    selectFontAttrs[NSForegroundColorAttributeName] = UIColorFromRGB(0x414f50);
+
+    [[UITabBarItem appearance] setTitleTextAttributes:normalFontAttrs forState:UIControlStateNormal];
+    [[UITabBarItem appearance] setTitleTextAttributes:selectFontAttrs forState:UIControlStateSelected];
+
+//    [self addChildViewController:_showVC imageName:@"video_normal" selectedImageName:@"video_click" title:nil];
+    [self addChildViewController:_showVC imageName:@"tab_main_normal" selectedImageName:@"tab_main_press" title:@"首页"];
+    [self addChildViewController:v1 imageName:@"tab_sub_normal" selectedImageName:@"tab_sub_press" title:@"订阅"];
     [self addChildViewController:_ imageName:@"" selectedImageName:@"" title:nil];
-    [self addChildViewController:v3 imageName:@"User_normal" selectedImageName:@"User_click" title:nil];
-    
+    [self addChildViewController:v2 imageName:@"tab_message_normal" selectedImageName:@"tab_message_press" title:@"消息"];
+//    [self addChildViewController:v3 imageName:@"User_normal" selectedImageName:@"User_click" title:nil];
+    [self addChildViewController:v3 imageName:@"tab_user_normal" selectedImageName:@"tab_user_press" title:@"我"];
+
+
     self.delegate = self; // this make tabBaController call
     [self setSelectedIndex:0];
 }
@@ -84,10 +100,12 @@ typedef enum : NSUInteger {
     self.liveBtn = ({
         UIButton *btn = [UIButton buttonWithType:UIButtonTypeCustom];
         [self.tabBar addSubview:btn];
-        [btn setImage:[UIImage imageNamed:@"play_normal"] forState:UIControlStateNormal];
-        [btn setImage:[UIImage imageNamed:@"play_click"] forState:UIControlStateSelected];
+//        [btn setImage:[UIImage imageNamed:@"play_normal"] forState:UIControlStateNormal];
+        [btn setImage:[UIImage imageNamed:@"tab_play"] forState:UIControlStateNormal];
+//        [btn setImage:[UIImage imageNamed:@"play_click"] forState:UIControlStateSelected];
         btn.adjustsImageWhenHighlighted = NO;//去除按钮的按下效果（阴影）
-        [btn addTarget:self action:@selector(onLiveButtonClicked) forControlEvents:UIControlEventTouchUpInside];
+//        [btn addTarget:self action:@selector(onLiveButtonClicked) forControlEvents:UIControlEventTouchUpInside];
+        [btn addTarget:self action:@selector(onLiveBtnClicked) forControlEvents:UIControlEventTouchUpInside];
         btn.frame = CGRectMake(self.tabBar.frame.size.width/2-60, -8, 120, 120);
         btn.imageEdgeInsets = UIEdgeInsetsMake(0, 35, 70, 35);
         btn;
