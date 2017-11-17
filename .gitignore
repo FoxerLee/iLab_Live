@@ -78,3 +78,6 @@ iOSInjectionProject/
 *.xcworkspace
 *.framework
 # End of https://www.gitignore.io/api/xcode,objective-c
+
+# ignore idea file
+.idea/
