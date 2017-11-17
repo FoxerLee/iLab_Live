@@ -106,7 +106,7 @@
         if (userInfo) {
             _loginParam.identifier = userInfo.identifier;
             _loginParam.userSig = [[TLSHelper getInstance] getTLSUserSig:userInfo.identifier];
-            _loginParam.tokenTime = [[NSDate date] timeIntervalSince1970];
+            _loginParam.tokenTime = (NSInteger) [[NSDate date] timeIntervalSince1970];
             
             [self loginIMSDK];
         }
@@ -195,10 +195,11 @@
     [_loginBtn addTarget:self action:@selector(login:) forControlEvents:UIControlEventTouchUpInside];
     
     _regBtn = [[UIButton alloc] init];
-    _regBtn.titleLabel.font = [UIFont systemFontOfSize:14];
-    [_regBtn setTitleColor:[UIColor colorWithWhite:1 alpha:0.5] forState:UIControlStateNormal];
-    [_regBtn setContentHorizontalAlignment:UIControlContentHorizontalAlignmentRight];
-    [_regBtn setTitle:@"注册新用户" forState:UIControlStateNormal];
+    _regBtn.titleLabel.font = [UIFont systemFontOfSize:16];
+    [_regBtn setTitle:@"注册" forState:UIControlStateNormal];
+    [_regBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
+    [_regBtn setBackgroundImage:[UIImage imageNamed:@"button"] forState:UIControlStateNormal];
+    [_regBtn setBackgroundImage:[UIImage imageNamed:@"button_pressed"] forState:UIControlStateSelected];
     [_regBtn addTarget:self action:@selector(reg:) forControlEvents:UIControlEventTouchUpInside];
     
     
@@ -220,7 +221,7 @@
     CGFloat screen_width = self.view.bounds.size.width;
     
     [_accountTextField sizeWith:CGSizeMake(screen_width - 50, 33)];
-    [_accountTextField alignParentTopWithMargin:97];
+    [_accountTextField alignParentTopWithMargin:180];
     [_accountTextField alignParentLeftWithMargin:25];
     
     [_lineView1 sizeWith:CGSizeMake(screen_width - 44, 1)];
@@ -228,10 +229,11 @@
     [_lineView1 alignParentLeftWithMargin:22];
     
     if (_isSMSLoginType) {
-        [_pwdTextField sizeWith:CGSizeMake(150, 33)];
+        [_pwdTextField sizeWith:CGSizeMake(200, 33)];
     } else {
         [_pwdTextField sizeWith:CGSizeMake(screen_width - 50, 33)];
     }
+    [_pwdTextField layoutBelow:_lineView1 margin: 10];
     [_pwdTextField layoutBelow:_lineView1 margin:6];
     [_pwdTextField alignParentLeftWithMargin:25];
     
@@ -243,9 +245,9 @@
     [_loginBtn layoutBelow:_lineView2 margin:36];
     [_loginBtn alignParentLeftWithMargin:22];
     
-    [_regBtn sizeWith:CGSizeMake(100, 15)];
-    [_regBtn layoutBelow:_loginBtn margin:25];
-    [_regBtn alignParentRightWithMargin:25];
+    [_regBtn sizeWith:CGSizeMake(screen_width - 44, 35)];
+    [_regBtn layoutBelow:_loginBtn margin:18];
+    [_regBtn alignParentLeftWithMargin:22];
 
 
     [_accountTextField setPlaceholder:@"输入用户名"];
@@ -253,7 +255,7 @@
     _accountTextField.keyboardType = UIKeyboardTypeDefault;
     [_pwdTextField setPlaceholder:@"输入密码"];
     [_pwdTextField setText:@""];
-    
+
     _pwdTextField.secureTextEntry = YES;
     
     _accountTextField.attributedPlaceholder = [[NSAttributedString alloc] initWithString:_accountTextField.placeholder attributes:@{NSForegroundColorAttributeName: [UIColor colorWithWhite:1 alpha:0.5]}];
