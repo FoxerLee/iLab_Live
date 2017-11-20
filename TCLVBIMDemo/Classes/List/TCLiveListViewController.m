@@ -590,6 +590,7 @@
     if (self.lives.count != 0) {
         for (TCLiveInfo *live in self.lives) {
             // TODO: 编写分组逻辑
+
             [eduLives addObject:live];
         }
     }

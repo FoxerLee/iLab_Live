@@ -25,7 +25,7 @@
 
 - (void)initUI {
     _coverPic = [[UIImageView alloc] init];
-    [_coverPic setImage:[UIImage imageNamed:@"bg_new@2x.jpg"]];
+    [_coverPic setImage:[UIImage imageNamed:@"bg.jpg"]];
     _coverPic.layer.masksToBounds = YES;
     [self addSubview:_coverPic];
 
