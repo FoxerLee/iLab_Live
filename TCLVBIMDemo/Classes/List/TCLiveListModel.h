@@ -38,6 +38,36 @@
 
 @end
 
+// 直播组类型
+typedef NS_ENUM(NSInteger, LiveType) {
+    LiveTypeGame,           //游戏
+    LiveTypeGirls,          //美妆
+    LiveTypeOutdoor,        //户外
+    LiveTypeMusic,          //音乐
+    LiveTypeSport,          //体育
+    LiveTypeEdu,            //教育
+    LiveTypeFood,           //美食
+    LiveTypeACG             //二次元
+};
+/**
+ * 直播分组信息，用于拉取整个直播列表后进行分组处理
+ */
+@interface TCLiveGroupInfo : NSObject
+
+@property NSString *groupName;                  //组名
+@property LiveType groupLiveType;               //类别
+@property NSString *groupDetail;                //组别详细信息
+@property NSMutableArray *liveList;             //组内的所有直播信息，成员为TCLiveInfo类型
+
+- (TCLiveGroupInfo *)initWithName: (NSString *)groupName
+                          andType: (LiveType)liveType andDetail:(NSString *)detail
+                      andLiveList:(NSMutableArray *)liveList;
+
++ (TCLiveGroupInfo *)initWithName: (NSString *)groupName
+                          andType: (LiveType)liveType andDetail:(NSString *)detail
+                      andLiveList:(NSMutableArray *)liveList;
+
+@end
 
 extern NSString *const kTCLiveListNewDataAvailable;
 extern NSString *const kTCLiveListSvrError;

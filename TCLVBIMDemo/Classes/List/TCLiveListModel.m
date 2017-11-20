@@ -66,6 +66,31 @@
 @end
 
 
+@implementation TCLiveGroupInfo
+- (TCLiveGroupInfo *)initWithName:(NSString *)groupName
+                          andType:(LiveType)liveType andDetail:(NSString *)detail
+                      andLiveList:(NSMutableArray *)liveList {
+    self = [super init];
+    if (self) {
+        self.groupName = groupName;
+        self.groupLiveType = liveType;
+        self.groupDetail = detail;
+        self.liveList = liveList;
+    }
+    return self;
+}
+
++ (TCLiveGroupInfo *)initWithName:(NSString *)groupName
+                          andType:(LiveType)liveType andDetail:(NSString *)detail
+                      andLiveList:(NSMutableArray *)liveList {
+    TCLiveGroupInfo *groupInfo = [[TCLiveGroupInfo alloc] initWithName:groupName
+                                                               andType:liveType andDetail:detail
+                                                           andLiveList:liveList];
+    return groupInfo;
+}
+
+@end
+
 // -----------------------------------------------------------------------------
 
 #import <AFNetworking.h>

@@ -17,29 +17,43 @@
 #import "TCLiveListModel.h"
 #import "TCPlayViewController_LinkMic.h"
 #import "UIColor+MLPFlatColors.h"
+#import "TCLiveGroupCell.h"
 
 
-@interface TCLiveListViewController ()<UICollectionViewDelegate,UICollectionViewDataSource>
+@interface TCLiveListViewController ()<UICollectionViewDelegate,UICollectionViewDataSource,
+        UITableViewDataSource, UITableViewDelegate, TCLiveGroupCellDelegate>
 
 @property TCLiveListMgr *liveListMgr;
 
 @property(nonatomic, strong) NSMutableArray *lives;
-@property(nonatomic, strong) UICollectionView *tableView;
+//@property(nonatomic, strong) UICollectionView *tableView;
+@property (nonatomic, strong) UITableView *tableView;
 @property BOOL isLoading;
 
+// 新增属性
+@property (nonatomic, strong) NSMutableArray *liveGroups;       //储存各个直播的分组情况
+@property (nonatomic, strong) NSMutableArray *cells;            //tableView的cell缓存
 @end
 
 @implementation TCLiveListViewController
 {
     BOOL             _hasEnterplayVC;
+    UIView           *_nullDataView;
+    VideoType        _videoType;
+
+    //新UI控件
+    UIView           *_searchView;          //整个上部搜索区
+    UITextField      *_searchInput;         //搜索栏
+    CGFloat          searchViewHeight;      //搜索View的高度
+    CGFloat          statusBarHeight;       //状态栏高度
+
+    // 旧UI控件
     UIButton         *_liveVideoBtn;
     UIButton         *_clickVieoBtn;
     UIButton         *_ugcVideoBtn;
     UIView           *_scrollView;
-    UIView           *_nullDataView;
     CGFloat          scrollViewWidth;
     CGFloat          scrollViewHeight;
-    VideoType        _videoType;
 }
 
 - (instancetype)init {
@@ -57,84 +71,15 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     self.view.backgroundColor = UIColorFromRGB(0xF6F2F4);
+
+    [self initNullView];
     
-    CGFloat btnSpace         = 40;
-    CGFloat btnWidth         = 38;
-    CGFloat btnHeight        = 24;
-    CGFloat statuBarHeight   = 20;
-    scrollViewWidth  = 70;
-    scrollViewHeight = 3;
- 
-    UIView *tabView = [[UIView alloc] initWithFrame:CGRectMake(0,statuBarHeight,SCREEN_WIDTH, 44)];
-    tabView.backgroundColor = [UIColor whiteColor];
-    
-    _liveVideoBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    [_liveVideoBtn setFrame:CGRectMake((SCREEN_WIDTH - btnWidth*3 - btnSpace*2)/2, 11, btnWidth, btnHeight)];
-    [_liveVideoBtn setTitle:@"直播" forState:UIControlStateNormal];
-    _liveVideoBtn.titleLabel.font = [UIFont systemFontOfSize:16];
-    [_liveVideoBtn setTitleColor:UIColorFromRGB(0x777777) forState:UIControlStateNormal];
-    [_liveVideoBtn addTarget:self action:@selector(videoBtnClick:) forControlEvents:UIControlEventTouchUpInside];
-    _liveVideoBtn.tag = 0;
-    
-    _clickVieoBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    [_clickVieoBtn setFrame:CGRectMake(_liveVideoBtn.right + btnSpace, 11, btnWidth, btnHeight)];
-    [_clickVieoBtn setTitle:@"回放" forState:UIControlStateNormal];
-    _clickVieoBtn.titleLabel.font = [UIFont systemFontOfSize:18];
-    [_clickVieoBtn setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
-    [_clickVieoBtn addTarget:self action:@selector(videoBtnClick:) forControlEvents:UIControlEventTouchUpInside];
-    _clickVieoBtn.tag = 1;
-    
-    _ugcVideoBtn = [UIButton buttonWithType:UIButtonTypeCustom];
-    [_ugcVideoBtn setFrame:CGRectMake(_clickVieoBtn.right + btnSpace, 11, btnWidth + 20, btnHeight)];
-    [_ugcVideoBtn setTitle:@"小视频" forState:UIControlStateNormal];
-    _ugcVideoBtn.titleLabel.font = [UIFont systemFontOfSize:16];
-    [_ugcVideoBtn setTitleColor:UIColorFromRGB(0x777777) forState:UIControlStateNormal];
-    [_ugcVideoBtn addTarget:self action:@selector(videoBtnClick:) forControlEvents:UIControlEventTouchUpInside];
-    _ugcVideoBtn.tag = 2;
-    
-    _scrollView = [[UIView alloc] initWithFrame:CGRectMake(_clickVieoBtn.left - (scrollViewWidth - _clickVieoBtn.width)/2, _clickVieoBtn.bottom + 5, scrollViewWidth, scrollViewHeight)];
-    _scrollView.backgroundColor = UIColorFromRGB(0xFF0ACBAB);
-    
-    UIView *boomView = [[UIView alloc] initWithFrame:CGRectMake(0, _scrollView.bottom, SCREEN_WIDTH, 1)];
-    boomView.backgroundColor = UIColorFromRGB(0xD8D8D8);
-    
-    [tabView addSubview:_liveVideoBtn];
-    [tabView addSubview:_clickVieoBtn];
-    [tabView addSubview:_ugcVideoBtn];
-    [tabView addSubview:_scrollView];
-    [tabView addSubview:boomView];
-    
-    [self.view addSubview:tabView];
-    
-    //self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0,tabView.bottom, SCREEN_WIDTH, self.view.height - tabView.height - statuBarHeight) //style:UITableViewStylePlain];
-    UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
-    [layout setScrollDirection:UICollectionViewScrollDirectionVertical];
-    self.tableView = [[UICollectionView alloc] initWithFrame:CGRectMake(0,tabView.bottom, SCREEN_WIDTH, self.view.height - tabView.height - statuBarHeight) collectionViewLayout:layout];
-    [self.tableView registerClass:[TCLiveListCell class] forCellWithReuseIdentifier:@"TCLiveListCell"];
-    self.tableView.dataSource = self;
-    self.tableView.delegate = self;
-    [self.view addSubview:self.tableView];
-    
-    self.automaticallyAdjustsScrollViewInsets = YES;
-    
-    CGFloat nullViewWidth   = 90;
-    CGFloat nullViewHeight  = 115;
-    CGFloat imageViewWidth  = 68;
-    CGFloat imageViewHeight = 74;
-    UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake((nullViewWidth - imageViewWidth)/2, 0, imageViewWidth, imageViewHeight)];
-    imageView.image = [UIImage imageNamed:@"null_image"];
-    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, imageView.bottom + 5, nullViewWidth, 22)];
-    label.text = @"暂无内容哦";
-    label.font = [UIFont systemFontOfSize:16];
-    label.textColor = UIColorFromRGB(0x777777);
-    
-    _nullDataView = [[UIView alloc] initWithFrame:CGRectMake((SCREEN_WIDTH - nullViewWidth)/2, (self.view.height - nullViewHeight)/2, nullViewWidth, nullViewHeight)];
-    [_nullDataView addSubview:imageView];
-    [_nullDataView addSubview:label];
-    _nullDataView.hidden = YES;
-    [self.view addSubview:_nullDataView];
-    
-    [self setup:VideoType_VOD_SevenDay];
+//    [self initMainUIOld];
+//    [self setup:VideoType_VOD_SevenDay];
+
+    [self initMainUI];
+    [self setupGestures];
+    [self setup: VideoType_LIVE_Online];
 }
 
 
@@ -149,8 +94,7 @@
     }
 }
 
--(void)viewWillDisappear:(BOOL)animated
-{
+-(void)viewWillDisappear:(BOOL)animated {
     UIView *statusBar = [[[UIApplication sharedApplication] valueForKey:@"statusBarWindow"] valueForKey:@"statusBar"];
     if ([statusBar respondsToSelector:@selector(setBackgroundColor:)]) {
         statusBar.backgroundColor = [UIColor clearColor];
@@ -171,6 +115,157 @@
     [[NSNotificationCenter defaultCenter] removeObserver:self name:kTCLiveListNewDataAvailable object:nil];
     //[[NSNotificationCenter defaultCenter] removeObserver:self name:kTCLiveListUpdated object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:kTCLiveListSvrError object:nil];
+}
+
+/**
+ * 初始化直播列表主界面(修改版)
+ */
+- (void)initMainUI {
+    statusBarHeight = 20;
+    searchViewHeight = 50;
+    CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+    CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
+
+    // 初始化搜索View
+    CGRect searchViewFrame = CGRectMake(0, statusBarHeight, screenWidth, searchViewHeight);
+    _searchView = [[UIView alloc] initWithFrame:searchViewFrame];
+    _searchView.backgroundColor = RGB(98, 213, 201);
+    [self.view addSubview:_searchView];
+
+    UIImage *searchImage = [UIImage imageNamed:@"main_search_bar"];
+    UIImageView *searchBar = [[UIImageView alloc] initWithImage:searchImage];
+    searchBar.frame = CGRectMake(10, 3, 310, 44);
+    [_searchView addSubview:searchBar];
+
+    _searchInput = [[UITextField alloc] init];
+    _searchInput.placeholder = kLiveSearchPlaceHolder;
+    _searchInput.frame = CGRectMake(55, 5, 260, 40);
+    _searchInput.enablesReturnKeyAutomatically = YES;
+    _searchInput.returnKeyType = UIReturnKeySearch;
+//    _searchInput.clearButtonMode = UITextFieldViewModeWhileEditing;
+    [_searchView addSubview:_searchInput];
+
+    UIButton *cancelBtn = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    [cancelBtn setTintColor:RGB(240, 240, 240)];
+    [cancelBtn setTitle:@"取消" forState:UIControlStateNormal];
+    cancelBtn.frame = CGRectMake(CGRectGetMaxX(searchBar.frame), 5, 50, 40);
+    [cancelBtn addTarget:self action:@selector(hideKeyboard) forControlEvents:UIControlEventTouchUpInside];
+    [_searchView addSubview:cancelBtn];
+
+    CGRect tableViewFrame = CGRectMake(0,
+            CGRectGetMaxY(_searchView.frame),
+            screenWidth,
+            screenHeight-CGRectGetMaxY(_searchView.frame) - self.tabBarController.tabBar.frame.size.height);
+    _tableView = [[UITableView alloc] initWithFrame:tableViewFrame style: UITableViewStylePlain];
+    _tableView.dataSource = self;
+    _tableView.delegate = self;
+    self.tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    self.tableView.mj_footer.hidden = YES;
+    [self.view addSubview:_tableView];
+
+    self.automaticallyAdjustsScrollViewInsets = YES;
+}
+
+/**
+ * 设置交互手势
+ */
+- (void)setupGestures {
+//    UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(hideKeyboard)];
+//    //设置成NO表示当前控件响应后会传播到其他控件上，默认为YES。
+//    tapGestureRecognizer.cancelsTouchesInView = NO;
+//    [self.view addGestureRecognizer:tapGestureRecognizer];
+}
+
+
+/**
+ * 初始化直播列表主界面(demo版)
+ */
+- (void)initMainUIOld {
+    CGFloat btnSpace         = 40;
+    CGFloat btnWidth         = 38;
+    CGFloat btnHeight        = 24;
+    CGFloat statuBarHeight   = 20;
+    scrollViewWidth  = 70;
+    scrollViewHeight = 3;
+    UIView *tabView = [[UIView alloc] initWithFrame:CGRectMake(0,statuBarHeight,SCREEN_WIDTH, 44)];
+    tabView.backgroundColor = [UIColor whiteColor];
+
+    _liveVideoBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    [_liveVideoBtn setFrame:CGRectMake((SCREEN_WIDTH - btnWidth*3 - btnSpace*2)/2, 11, btnWidth, btnHeight)];
+    [_liveVideoBtn setTitle:@"直播" forState:UIControlStateNormal];
+    _liveVideoBtn.titleLabel.font = [UIFont systemFontOfSize:16];
+    [_liveVideoBtn setTitleColor:UIColorFromRGB(0x777777) forState:UIControlStateNormal];
+    [_liveVideoBtn addTarget:self action:@selector(videoBtnClick:) forControlEvents:UIControlEventTouchUpInside];
+    _liveVideoBtn.tag = 0;
+
+    _clickVieoBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    [_clickVieoBtn setFrame:CGRectMake(_liveVideoBtn.right + btnSpace, 11, btnWidth, btnHeight)];
+    [_clickVieoBtn setTitle:@"回放" forState:UIControlStateNormal];
+    _clickVieoBtn.titleLabel.font = [UIFont systemFontOfSize:18];
+    [_clickVieoBtn setTitleColor:[UIColor blackColor] forState:UIControlStateNormal];
+    [_clickVieoBtn addTarget:self action:@selector(videoBtnClick:) forControlEvents:UIControlEventTouchUpInside];
+    _clickVieoBtn.tag = 1;
+
+    _ugcVideoBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    [_ugcVideoBtn setFrame:CGRectMake(_clickVieoBtn.right + btnSpace, 11, btnWidth + 20, btnHeight)];
+    [_ugcVideoBtn setTitle:@"小视频" forState:UIControlStateNormal];
+    _ugcVideoBtn.titleLabel.font = [UIFont systemFontOfSize:16];
+    [_ugcVideoBtn setTitleColor:UIColorFromRGB(0x777777) forState:UIControlStateNormal];
+    [_ugcVideoBtn addTarget:self action:@selector(videoBtnClick:) forControlEvents:UIControlEventTouchUpInside];
+    _ugcVideoBtn.tag = 2;
+
+    _scrollView = [[UIView alloc] initWithFrame:CGRectMake(_clickVieoBtn.left - (scrollViewWidth - _clickVieoBtn.width)/2, _clickVieoBtn.bottom + 5, scrollViewWidth, scrollViewHeight)];
+    _scrollView.backgroundColor = UIColorFromRGB(0xFF0ACBAB);
+
+    UIView *boomView = [[UIView alloc] initWithFrame:CGRectMake(0, _scrollView.bottom, SCREEN_WIDTH, 1)];
+    boomView.backgroundColor = UIColorFromRGB(0xD8D8D8);
+
+    [tabView addSubview:_liveVideoBtn];
+    [tabView addSubview:_clickVieoBtn];
+    [tabView addSubview:_ugcVideoBtn];
+    [tabView addSubview:_scrollView];
+    [tabView addSubview:boomView];
+
+    [self.view addSubview:tabView];
+
+    //self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0,tabView.bottom, SCREEN_WIDTH, self.view.height - tabView.height - statuBarHeight) //style:UITableViewStylePlain];
+
+
+//    UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
+//    [layout setScrollDirection:UICollectionViewScrollDirectionVertical];
+//    self.tableView = [[UICollectionView alloc] initWithFrame:CGRectMake(0,tabView.bottom, SCREEN_WIDTH, self.view.height - tabView.height - statuBarHeight) collectionViewLayout:layout];
+//    [self.tableView registerClass:[TCLiveListCell class] forCellWithReuseIdentifier:@"TCLiveListCell"];
+//    self.tableView.dataSource = self;
+//    self.tableView.delegate = self;
+//    [self.view addSubview:self.tableView];
+//
+//    self.automaticallyAdjustsScrollViewInsets = YES;
+}
+
+/**
+ * 设置无在线直播时显示的UIView
+ */
+- (void)initNullView {
+    CGFloat nullViewWidth   = 90;
+    CGFloat nullViewHeight  = 115;
+    CGFloat imageViewWidth  = 68;
+    CGFloat imageViewHeight = 74;
+    UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake((nullViewWidth - imageViewWidth)/2, 0, imageViewWidth, imageViewHeight)];
+    imageView.image = [UIImage imageNamed:@"null_image"];
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, imageView.bottom + 5, nullViewWidth, 22)];
+    label.text = @"暂无内容哦";
+    label.font = [UIFont systemFontOfSize:16];
+    label.textColor = UIColorFromRGB(0x777777);
+    _nullDataView = [[UIView alloc] initWithFrame:CGRectMake((SCREEN_WIDTH - nullViewWidth)/2, (self.view.height - nullViewHeight)/2, nullViewWidth, nullViewHeight)];
+    [_nullDataView addSubview:imageView];
+    [_nullDataView addSubview:label];
+    _nullDataView.hidden = YES;
+    [self.view addSubview:_nullDataView];
+}
+
+- (void)hideKeyboard {
+    _searchInput.text = @"";
+    [_searchInput resignFirstResponder];
 }
 
 - (void)setup:(VideoType)type
@@ -202,7 +297,7 @@
     [(MJRefreshHeader *)self.tableView.mj_header endRefreshingWithCompletionBlock:^{
         self.isLoading = NO;
     }];
-    [(MJRefreshHeader *)self.tableView.mj_footer endRefreshingWithCompletionBlock:^{
+    [(MJRefreshFooter *)self.tableView.mj_footer endRefreshingWithCompletionBlock:^{
         self.isLoading = NO;
     }];
 }
@@ -268,6 +363,61 @@
     }
 }
 
+
+#pragma mark - UITableView datasource
+
+- (NSInteger)numberOfSectionsInTableView:(UITableView *)tableView {
+    return 1;
+}
+
+- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return _liveGroups.count;
+}
+
+- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
+    TCLiveGroupCell *cell = [tableView dequeueReusableCellWithIdentifier:@"TCLiveGroupCell"];
+    if (cell == nil) {
+        cell = [[TCLiveGroupCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"TCLiveGroupCell"];
+    }
+    TCLiveGroupInfo *group = _liveGroups[indexPath.row];
+    NSLog(@"row: %d", indexPath.row);
+    NSLog(@"group name: %@", group.groupName);
+    cell.group = group;
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    cell.delegate = self;           // 为直播预览图点击事件设置代理
+    return cell;
+}
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
+    TCLiveGroupCell *cell = _cells[indexPath.row];
+    cell.group = _liveGroups[indexPath.row];
+
+    return cell.height;
+}
+
+
+#pragma mark - TCLiveGroupCell delegate
+- (void)onTapLiveView:(TCLiveInfo *)liveInfo {
+    NSLog(@"tap test %@", liveInfo.userinfo.nickname);
+    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(playError:) name:kTCLivePlayError object:nil];
+    // MARK: 打开播放界面
+    if (_playVC == nil) {
+        _playVC = [[TCPlayViewController_LinkMic alloc] initWithPlayInfo:liveInfo videoIsReady:^{
+            if (!_hasEnterplayVC) {
+                [[TCBaseAppDelegate sharedAppDelegate] pushViewController:_playVC animated:YES];
+                _hasEnterplayVC = YES;
+            }
+        }];
+    }
+
+    [self performSelector:@selector(enterPlayVC:) withObject:_playVC afterDelay:0.5];
+}
+
+//- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+//    NSLog(@"%d", indexPath.row);
+//}
+
+
 #pragma mark - UICollectionView datasource
 
 - (NSInteger)numberOfSectionsInCollectionView:(UICollectionView *)collectionView {
@@ -301,7 +451,7 @@
     else {
         index = indexPath.section;
     }
-    
+
     if (self.lives.count > index) {
         TCLiveInfo *live = self.lives[index];
         cell.type = (VideoType_UGC_SevenDay == _videoType ? 1 : 0);
@@ -394,15 +544,15 @@
         }
         //[[HUDHelper sharedInstance] tipMessage:@"没有啦"];
     }
+
+    NSLog(@"%d", self.lives.count);
+    //对self.lives 进行分组
+    [self groupingLives];
+
     [self.tableView reloadData];
     [self.tableView.mj_header endRefreshing];
     [self.tableView.mj_footer endRefreshing];
-    
-    if (self.lives.count == 0) {
-        _nullDataView.hidden = NO;
-    }else{
-        _nullDataView.hidden = YES;
-    }
+    _nullDataView.hidden = self.lives.count != 0;
 }
 
 /**
@@ -423,6 +573,75 @@
     }];
     
     return newArray;
+}
+
+- (void)groupingLives {
+    NSMutableArray *liveGroups = [NSMutableArray array];
+
+    NSMutableArray *gameLives       = [NSMutableArray array];
+    NSMutableArray *girlsLives      = [NSMutableArray array];
+    NSMutableArray *outdoorLives    = [NSMutableArray array];
+    NSMutableArray *musicLives      = [NSMutableArray array];
+    NSMutableArray *sportsLives     = [NSMutableArray array];
+    NSMutableArray *eduLives        = [NSMutableArray array];
+    NSMutableArray *foodLives       = [NSMutableArray array];
+    NSMutableArray *acgLives        = [NSMutableArray array];
+
+    if (self.lives.count != 0) {
+        for (TCLiveInfo *live in self.lives) {
+            // TODO: 编写分组逻辑
+            [eduLives addObject:live];
+        }
+    }
+
+    if (gameLives.count != 0) {
+        TCLiveGroupInfo *groupGameLives = [TCLiveGroupInfo initWithName:@"游戏达人" andType:LiveTypeGame
+                                                              andDetail:nil andLiveList:gameLives];
+        [liveGroups addObject:groupGameLives];
+    }
+    if (girlsLives.count != 0) {
+        TCLiveGroupInfo *groupGirlsLives = [TCLiveGroupInfo initWithName:@"美妆" andType:LiveTypeGirls
+                                                               andDetail:nil andLiveList:girlsLives];
+        [liveGroups addObject:groupGirlsLives];
+    }
+    if (outdoorLives.count != 0) {
+        TCLiveGroupInfo *groupOutdoorLives = [TCLiveGroupInfo initWithName:@"户外" andType:LiveTypeOutdoor
+                                                                 andDetail:nil andLiveList:outdoorLives];
+        [liveGroups addObject:groupOutdoorLives];
+    }
+    if (musicLives.count != 0) {
+        TCLiveGroupInfo *groupMusicLives = [TCLiveGroupInfo initWithName:@"音乐" andType:LiveTypeMusic
+                                                               andDetail:nil andLiveList:musicLives];
+        [liveGroups addObject:groupMusicLives];
+    }
+    if (sportsLives.count != 0) {
+        TCLiveGroupInfo *groupSportsLives = [TCLiveGroupInfo initWithName:@"体育" andType:LiveTypeSport
+                                                                andDetail:nil andLiveList:sportsLives];
+        [liveGroups addObject:groupSportsLives];
+    }
+    if (eduLives.count != 0) {
+        TCLiveGroupInfo *groupEduLives = [TCLiveGroupInfo initWithName:@"教育" andType:LiveTypeEdu
+                                                             andDetail:nil andLiveList:eduLives];
+        [liveGroups addObject:groupEduLives];
+    }
+    if (foodLives.count != 0) {
+        TCLiveGroupInfo *groupFoodLives = [TCLiveGroupInfo initWithName:@"美食" andType:LiveTypeFood
+                                                              andDetail:nil andLiveList:foodLives];
+        [liveGroups addObject:groupFoodLives];
+    }
+    if (acgLives.count != 0) {
+        TCLiveGroupInfo *groupACGLives = [TCLiveGroupInfo initWithName:@"二次元" andType:LiveTypeACG
+                                                             andDetail:nil andLiveList:acgLives];
+        [liveGroups addObject:groupACGLives];
+    }
+
+    self.liveGroups = liveGroups;
+
+    _cells = [[NSMutableArray alloc] init];
+    for (int i = 0; i < _liveGroups.count; ++i) {
+        TCLiveGroupCell *cell = [[TCLiveGroupCell alloc] init];
+        [_cells addObject:cell];
+    }
 }
 
 /**

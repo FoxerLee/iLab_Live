@@ -137,7 +137,8 @@
             CGSize titleTextSize  = [_profile.nickName sizeWithAttributes:@{NSFontAttributeName:nickText.font}];
             [faceImage sd_setImageWithURL:[NSURL URLWithString:[TCUtil transImageURL2HttpsURL:_profile.faceURL]] placeholderImage:[UIImage imageNamed:@"default_user"]];
             faceImage.frame = CGRectMake((mainScreenSize.size.width-100)/2, 50,100, 100);
-            faceImage.layer.cornerRadius = 50;
+//            faceImage.layer.cornerRadius = 50;
+            faceImage.layer.cornerRadius = faceImage.frame.size.width*0.5f;
             nickText.text  = _profile.nickName;
             nickText.frame = CGRectMake(0, 175,mainScreenSize.size.width,titleTextSize.height);
             identifierText.text  = [NSString stringWithFormat:@"ID:%@",_profile.identifier];
