@@ -170,10 +170,10 @@
  * 设置交互手势
  */
 - (void)setupGestures {
-//    UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(hideKeyboard)];
-//    //设置成NO表示当前控件响应后会传播到其他控件上，默认为YES。
-//    tapGestureRecognizer.cancelsTouchesInView = NO;
-//    [self.view addGestureRecognizer:tapGestureRecognizer];
+    UITapGestureRecognizer *tapGestureRecognizer = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(hideKeyboard)];
+    //设置成NO表示当前控件响应后会传播到其他控件上，默认为YES。
+    tapGestureRecognizer.cancelsTouchesInView = NO;
+    [self.view addGestureRecognizer:tapGestureRecognizer];
 }
 
 
@@ -590,7 +590,6 @@
     if (self.lives.count != 0) {
         for (TCLiveInfo *live in self.lives) {
             // TODO: 编写分组逻辑
-
             [eduLives addObject:live];
         }
     }
