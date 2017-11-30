@@ -10,6 +10,7 @@
 #import "ImSDK/TIMFriendshipManager.h"
 #import "TCUserInfoModel.h"
 #import "TCEditUserInfoViewController.h"
+#import "TCViewHistoryViewController.h"
 #import "TCUtil.h"
 
 #import <UIKit/UIKit.h>
@@ -43,7 +44,7 @@
 }
 
 /**
- *  在绘制cell的时候获取cell的高度,在用户信息界面第一个cell取275,编辑个人信息 界面第一个cell取65,其他都是45
+ *  在绘制cell的时候获取cell的高度,在用户信息界面第一个cell取225,编辑个人信息 界面第一个cell取65,其他都是45
  *
  *  @param item 用于cell数据结构体
  *
@@ -51,13 +52,13 @@
  */
 + (NSInteger)heightOf:(TCUserInfoCellItem *)item
 {
-    if (TCUserInfo_EditFace == item.type )
+    if (TCUserInfo_EditFace == item.type || TCUserInfo_FollowAndFans == item.type)
     {
         return 65;
     }
     else if (TCUserInfo_View == item.type)
     {
-        return 275;
+        return 205;
     }
     
     return 45;
@@ -84,7 +85,7 @@
     return self;
 }
 /**
- *  用于初始化数据 目前只用于当在 用户信息界面 上的第一个组合cell
+ *  用于初始化数据 目前只用于当在 用户信息界面 上的第一个组合cell 和 账户余额cell
  *
  *  @param item cell信息结构体指针
  */
@@ -94,7 +95,8 @@
     {
         UIView* bgview = [[UIView alloc] init];
         bgview.opaque = YES;
-        bgview.backgroundColor = RGB(0x22,0x2B,0x48);
+//        bgview.backgroundColor = RGB(0x22,0x2B,0x48);
+        bgview.backgroundColor = RGB(0xbf,0xe3,0xeb);
         [self setBackgroundView:bgview];
         
         UIColor *uiBorderColor = RGB(0x0A,0xCC,0xAC);
@@ -104,21 +106,25 @@
         faceImage.layer.borderColor   = uiBorderColor.CGColor;
         
         nickText = [[UILabel alloc] init];
-        nickText.textAlignment = NSTextAlignmentCenter;
-        nickText.textColor     = [UIColor whiteColor];
-        nickText.font          = [UIFont systemFontOfSize:18];
+        nickText.textAlignment = NSTextAlignmentLeft;
+        nickText.textColor     = [UIColor blackColor];
+        nickText.font          = [UIFont systemFontOfSize:24];
         nickText.lineBreakMode = NSLineBreakByWordWrapping;
         
         identifierText = [[UILabel alloc] init];
-        identifierText.textColor     = [UIColor whiteColor];
-        identifierText.font          = [UIFont systemFontOfSize:14];
-        identifierText.textAlignment = NSTextAlignmentCenter;
+        identifierText.textColor     = [UIColor grayColor];
+        identifierText.font          = [UIFont systemFontOfSize:16];
+        identifierText.textAlignment = NSTextAlignmentLeft;
         identifierText.lineBreakMode = NSLineBreakByWordWrapping;
         
+        [self addSubview:faceImage];
         [self addSubview:nickText];
         [self addSubview:identifierText];
-        [self addSubview:faceImage];
     }
+//    if(TCUserInfo_Balance == item.type)
+//    {
+//        UIImageView *icon = [[UIImageView alloc] init];
+//    }
 }
 
 //绘制 用于信息界面 中的tableview的cell
@@ -136,17 +142,69 @@
             CGRect mainScreenSize = [ UIScreen mainScreen ].applicationFrame;
             CGSize titleTextSize  = [_profile.nickName sizeWithAttributes:@{NSFontAttributeName:nickText.font}];
             [faceImage sd_setImageWithURL:[NSURL URLWithString:[TCUtil transImageURL2HttpsURL:_profile.faceURL]] placeholderImage:[UIImage imageNamed:@"default_user"]];
-            faceImage.frame = CGRectMake((mainScreenSize.size.width-100)/2, 50,100, 100);
+            faceImage.frame = CGRectMake(20, 85, 100, 100);
 //            faceImage.layer.cornerRadius = 50;
             faceImage.layer.cornerRadius = faceImage.frame.size.width*0.5f;
             nickText.text  = _profile.nickName;
-            nickText.frame = CGRectMake(0, 175,mainScreenSize.size.width,titleTextSize.height);
+            nickText.frame = CGRectMake(CGRectGetMaxX(faceImage.frame) + 20, CGRectGetMinY(faceImage.frame), 200, 50);
+            
             identifierText.text  = [NSString stringWithFormat:@"ID:%@",_profile.identifier];
-            identifierText.frame = CGRectMake(0, 175+10+titleTextSize.height,mainScreenSize.size.width, titleTextSize.height);
+            identifierText.frame = CGRectMake(CGRectGetMinX(nickText.frame), CGRectGetMaxY(nickText.frame), 200, 50);
+        }
+        break;
+//        case TCUserInfo_FollowAndFans:
+        case TCUserInfo_FollowAndFans:
+        {
+            UIView* bgview = [[UIView alloc] init];
+            bgview.opaque = YES;
+//        bgview.backgroundColor = RGB(0xf3,0x2B,0x48);
+            bgview.backgroundColor = RGB(0xf3,0xf3,0xf3);
+            [self setBackgroundView:bgview];
+        }
+        case TCUserInfo_Balance:
+        {
+            UIImageView *icon = [[UIImageView alloc] initWithFrame:CGRectMake(30, self.textLabel.frame.origin.y + 10, 25, 25)];
+            [icon setImage:[UIImage imageNamed:@"balance.png"]];
+            [self addSubview:icon];
+//            self.textLabel.text      = item.tip;
+//            self.textLabel.textColor = [UIColor blackColor];
+//            self.textLabel.font      = [UIFont systemFontOfSize:16];
+            UILabel *itemText = [[UILabel alloc] initWithFrame:CGRectMake(85, self.textLabel.frame.origin.y, 100, 45)];
+            itemText.text          = item.tip;
+            itemText.textColor     = [UIColor blackColor];
+            itemText.font          = [UIFont systemFontOfSize:16];
+            [self addSubview:itemText];
+        }
+        break;
+        case TCUserInfo_History:
+        {
+            UIImageView *icon = [[UIImageView alloc] initWithFrame:CGRectMake(30, self.textLabel.frame.origin.y + 10, 25, 25)];
+            [icon setImage:[UIImage imageNamed:@"viewHistory.png"]];
+            [self addSubview:icon];
+            
+            UILabel *itemText = [[UILabel alloc] initWithFrame:CGRectMake(85, self.textLabel.frame.origin.y, 100, 45)];
+            itemText.text          = item.tip;
+            itemText.textColor     = [UIColor blackColor];
+            itemText.font          = [UIFont systemFontOfSize:16];
+            [self addSubview:itemText];
+            self.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
+        }
+        break;
+        case TCUserInfo_Edit:
+        {
+            UIImageView *icon = [[UIImageView alloc] initWithFrame:CGRectMake(30, self.textLabel.frame.origin.y + 10, 25, 25)];
+            [icon setImage:[UIImage imageNamed:@"setting.png"]];
+            [self addSubview:icon];
+            
+            UILabel *itemText = [[UILabel alloc] initWithFrame:CGRectMake(85, self.textLabel.frame.origin.y, 100, 45)];
+            itemText.text          = item.tip;
+            itemText.textColor     = [UIColor blackColor];
+            itemText.font          = [UIFont systemFontOfSize:16];
+            [self addSubview:itemText];
+            self.accessoryType = UITableViewCellAccessoryDisclosureIndicator;
         }
         break;
         case TCUserInfo_About:
-        case TCUserInfo_Edit:
         case TCUserInfo_Authenticate:
         {
             self.textLabel.text      = item.tip;

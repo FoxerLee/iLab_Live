@@ -10,6 +10,7 @@
 
 #import "TCUserInfoModel.h"
 #import "TCEditUserInfoViewController.h"
+#import "TCViewHistoryViewController.h"
 
 @class TCUserInfoCellItem;
 @class TCUserInfoTableViewCell;
@@ -27,9 +28,12 @@ typedef NS_ENUM(NSInteger, TCUserInfoCellType)
     TCUserInfo_EditGender,
     
     // 代表点击 用户信息 界面上的元素
-    TCUserInfo_View,  // 展示个人信息cell(头像,昵称,id在此cell内部从上到下依次排列)
-    TCUserInfo_Edit,  // 点击后切换到 编辑个人信息 页面
-    TCUserInfo_About, // 点击后显示小直播版本号
+    TCUserInfo_View,    // 展示个人信息cell(头像,昵称,id在此cell内部显示)
+    TCUserInfo_FollowAndFans, //我的粉丝和关注cell（内设两个button）
+    TCUserInfo_Balance, // 显示用户余额（不响应点击）
+    TCUserInfo_History, // 点击后切换到 观看历史 页面
+    TCUserInfo_Edit,    // 点击后切换到 编辑个人信息（设置） 页面
+    TCUserInfo_About,   // 点击后显示小直播版本号
     TCUserInfo_Authenticate,   // 实名认证
 };
 /*
@@ -75,6 +79,8 @@ typedef NS_ENUM(NSInteger, TCUserInfoCellType)
     UIImageView *faceImage;
     UILabel     *nickText;
     UILabel     *identifierText;
+    UILabel     *myFollow;
+    UILabel     *myFans;
     
     __weak TCUserInfoCellItem *_item;
 }

@@ -7,6 +7,9 @@
 //
 
 #import "TCUserInfoViewController.h"
+#import "TCMyFollowViewController.h"
+#import "TCMyFansViewController.h"
+#import "TCViewHistoryViewController.h"
 #import "TCEditUserInfoViewController.h"
 #import "TCUserInfoCell.h"
 #import "ImSDK/TIMManager.h"
@@ -50,6 +53,26 @@ extern BOOL g_bNeedEnterPushSettingView;
         DebugLog(@"退出登录失败 errCode = %d, errMsg = %@", code, msg);
     }];
 }
+/**
+ *  用于点击 我的粉丝 按钮后的回调,用于打开新界面
+ *
+ *  @param sender 无意义
+ */
+- (void)onShowMyFans:(id)sender
+{
+    TCMyFansViewController *vc = [[TCMyFansViewController alloc] init];
+    [self.navigationController pushViewController:vc animated:true];
+}
+/**
+ *  用于点击 我的关注 按钮后的回调,用于打开新界面
+ *
+ *  @param sender 无意义
+ */
+- (void)onShowMyFollow:(id)sender
+{
+    TCMyFollowViewController *vc = [[TCMyFollowViewController alloc] init];
+    [self.navigationController pushViewController:vc animated:true];
+}
 
 - (void)viewDidLoad
 {
@@ -65,7 +88,16 @@ extern BOOL g_bNeedEnterPushSettingView;
     TCUserInfoCellItem *backFaceItem = [[TCUserInfoCellItem alloc] initWith:@"" value:@"" type:TCUserInfo_View action:^(TCUserInfoCellItem *menu, TCUserInfoTableViewCell *cell) {
         nil; }];
     
-    TCUserInfoCellItem *setItem = [[TCUserInfoCellItem alloc] initWith:@"编辑个人信息" value:nil type:TCUserInfo_Edit action:^(TCUserInfoCellItem *menu, TCUserInfoTableViewCell *cell) {
+    TCUserInfoCellItem *followAndFansItem = [[TCUserInfoCellItem alloc] initWith:@"" value:@"" type:TCUserInfo_FollowAndFans action:^(TCUserInfoCellItem *menu, TCUserInfoTableViewCell *cell) {
+        nil; }];
+    
+    TCUserInfoCellItem *balanceItem = [[TCUserInfoCellItem alloc] initWith:@"账户余额" value:nil type:TCUserInfo_Balance action:^(TCUserInfoCellItem *menu, TCUserInfoTableViewCell *cell) {
+        nil; }];
+    
+    TCUserInfoCellItem *historyItem = [[TCUserInfoCellItem alloc] initWith:@"观看记录" value:nil type:TCUserInfo_History action:^(TCUserInfoCellItem *menu, TCUserInfoTableViewCell *cell) {
+        [ws onShowViewHistory:menu cell:cell]; } ];
+    
+    TCUserInfoCellItem *setItem = [[TCUserInfoCellItem alloc] initWith:@"设置" value:nil type:TCUserInfo_Edit action:^(TCUserInfoCellItem *menu, TCUserInfoTableViewCell *cell) {
         [ws onEditUserInfo:menu cell:cell]; } ];
     
     TCUserInfoCellItem *aboutItem = [[TCUserInfoCellItem alloc] initWith:@"关于小直播" value:nil type:TCUserInfo_About action:^(TCUserInfoCellItem *menu, TCUserInfoTableViewCell *cell) { [ws onShowAppVersion:menu cell:cell]; } ];
@@ -76,11 +108,12 @@ extern BOOL g_bNeedEnterPushSettingView;
     TCUserInfoCellItem *authItem = [[TCUserInfoCellItem alloc] initWith:@"实名认证" value:nil type:TCUserInfo_Authenticate action:^(TCUserInfoCellItem *menu,
                                                                                                                                 TCUserInfoTableViewCell *cell) { [ws onAuthenticate:menu cell:cell]; } ];
     
-    _userInfoUISetArry = [NSMutableArray arrayWithArray:@[backFaceItem,setItem, aboutItem, authItem]];
+    _userInfoUISetArry = [NSMutableArray arrayWithArray:@[backFaceItem, followAndFansItem, balanceItem, historyItem, setItem, aboutItem, authItem]];
 #else
-    CGFloat tableHeight = 365;
-    CGFloat quitBtnYSpace = 385;
-    _userInfoUISetArry = [NSMutableArray arrayWithArray:@[backFaceItem,setItem, aboutItem]];
+    CGFloat tableHeight = 205 + 65 + 45 + 45 + 45; //每个cell是45。除了“我”界面第一个cell是225，“设置”界面第一个cell是65
+    CGFloat quitBtnYSpace = 385 + 45 + 45 - 50;
+
+    _userInfoUISetArry = [NSMutableArray arrayWithArray:@[backFaceItem, followAndFansItem, balanceItem, historyItem, setItem, aboutItem]];
 #endif
     
     //设置tableview属性
@@ -102,6 +135,28 @@ extern BOOL g_bNeedEnterPushSettingView;
     [button setTitleColor:[UIColor blackColor]forState:UIControlStateNormal];
     [button addTarget:self action:@selector(logout:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:button];
+    
+    //我的关注 按钮的显示
+    UIButton *myFollow = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    myFollow.frame = CGRectMake(0, 205, self.view.frame.size.width / 2, 55); //间隙为5
+    myFollow.titleLabel.font = [UIFont systemFontOfSize:16];
+    [myFollow setTitle:@"我的关注" forState:UIControlStateNormal];
+    [myFollow setTitleColor:[UIColor blackColor]forState:UIControlStateNormal];
+    [myFollow setBackgroundColor:[UIColor whiteColor]];
+    [myFollow addTarget:self action:@selector(onShowMyFollow:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:myFollow];
+    
+    //我的粉丝 按钮的显示
+    UIButton *myFans = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    myFans.frame = CGRectMake(CGRectGetMaxX(myFollow.frame), 205, self.view.frame.size.width / 2, 55);
+    myFans.titleLabel.font = [UIFont systemFontOfSize:16];
+    [myFans setTitle:@"我的粉丝" forState:UIControlStateNormal];
+    [myFans setTitleColor:[UIColor blackColor]forState:UIControlStateNormal];
+    [myFans setBackgroundColor:[UIColor whiteColor]];
+    [myFans addTarget:self action:@selector(onShowMyFans:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:myFans];
+    
+    
     
     // 设置通知消息,接受到通知后重绘cell,确保更改后的用户资料能同步到用户信息界面
     [[NSNotificationCenter defaultCenter] removeObserver:self name:KReloadUserInfoNotification object:nil];
@@ -189,6 +244,23 @@ extern BOOL g_bNeedEnterPushSettingView;
     }
     
     [tableView deselectRowAtIndexPath:indexPath animated:NO];
+}
+
+///**
+// *  用于显示 账户余额 页面
+// */
+//- (void)onEditUserInfo:(TCUserInfoCellItem *)menu cell:(TCUserInfoTableViewCell *)cell
+//{
+//    TCEditUserInfoViewController *vc = [[TCEditUserInfoViewController alloc] init];
+//    [self.navigationController pushViewController:vc animated:true];
+//}
+/**
+ *  用于显示 观看记录 页面
+ */
+- (void)onShowViewHistory:(TCUserInfoCellItem *)menu cell:(TCUserInfoTableViewCell *)cell
+{
+    TCViewHistoryViewController *vc = [[TCViewHistoryViewController alloc] init];
+    [self.navigationController pushViewController:vc animated:true];
 }
 /**
  *  用于显示 编辑个人信息 页面
