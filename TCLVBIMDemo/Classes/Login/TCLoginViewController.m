@@ -188,24 +188,22 @@
     
     _loginBtn = [[UIButton alloc] init];
     _loginBtn.titleLabel.font = [UIFont systemFontOfSize:16];
+    _loginBtn.backgroundColor = RGB(0x5f, 0xd5, 0xc9);
+    _loginBtn.layer.cornerRadius = 15;
     [_loginBtn setTitle:@"登录" forState:UIControlStateNormal];
     [_loginBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    [_loginBtn setBackgroundImage:[UIImage imageNamed:@"button"] forState:UIControlStateNormal];
-    [_loginBtn setBackgroundImage:[UIImage imageNamed:@"button_pressed"] forState:UIControlStateSelected];
+//    [_loginBtn setBackgroundImage:[UIImage imageNamed:@"firstButton_pressed"] forState:UIControlStateSelected];
     [_loginBtn addTarget:self action:@selector(login:) forControlEvents:UIControlEventTouchUpInside];
     
     _regBtn = [[UIButton alloc] init];
     _regBtn.titleLabel.font = [UIFont systemFontOfSize:16];
+    _regBtn.backgroundColor = RGB(0x9d, 0xd0, 0xef);
+    _regBtn.layer.cornerRadius = 15;
     [_regBtn setTitle:@"注册" forState:UIControlStateNormal];
     [_regBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    [_regBtn setBackgroundImage:[UIImage imageNamed:@"button"] forState:UIControlStateNormal];
-    [_regBtn setBackgroundImage:[UIImage imageNamed:@"button_pressed"] forState:UIControlStateSelected];
+//    [_regBtn setBackgroundImage:[UIImage imageNamed:@"secondButton_pressed"] forState:UIControlStateSelected];
     [_regBtn addTarget:self action:@selector(reg:) forControlEvents:UIControlEventTouchUpInside];
-    
-    
 
-    
-    
     [self.view addSubview:_accountTextField];
     [self.view addSubview:_lineView1];
     [self.view addSubview:_pwdTextField];
@@ -248,6 +246,7 @@
     [_regBtn sizeWith:CGSizeMake(screen_width - 44, 35)];
     [_regBtn layoutBelow:_loginBtn margin:18];
     [_regBtn alignParentLeftWithMargin:22];
+
 
 
     [_accountTextField setPlaceholder:@"输入用户名"];

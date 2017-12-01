@@ -95,10 +95,13 @@
     
     _regBtn = [[UIButton alloc] init];
     _regBtn.titleLabel.font = [UIFont systemFontOfSize:16];
+    _regBtn.backgroundColor = RGB(0x5f, 0xd5, 0xc9);
+    _regBtn.layer.cornerRadius = 15;
     [_regBtn setTitle:@"注册" forState:UIControlStateNormal];
     [_regBtn setTitleColor:[UIColor whiteColor] forState:UIControlStateNormal];
-    [_regBtn setBackgroundImage:[UIImage imageNamed:@"button"] forState:UIControlStateNormal];
-    [_regBtn setBackgroundImage:[UIImage imageNamed:@"button_pressed"] forState:UIControlStateSelected];
+    [_regBtn setTitleColor:[UIColor grayColor] forState:UIControlStateSelected];
+//    [_regBtn setBackgroundImage:[UIImage imageNamed:@"button"] forState:UIControlStateNormal];
+//    [_regBtn setBackgroundImage:[UIImage imageNamed:@"button_pressed"] forState:UIControlStateSelected];
     [_regBtn addTarget:self action:@selector(reg:) forControlEvents:UIControlEventTouchUpInside];
     
    
