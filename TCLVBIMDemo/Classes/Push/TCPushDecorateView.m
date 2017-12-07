@@ -17,6 +17,9 @@
 #import "TCConstants.h"
 #import "TCLoginModel.h"
 #import "V8HorizontalPickerView.h"
+#import "LiveGiftShowCustom.h"
+#import "MJExtension.h"
+#import "NSString+Common.h"
 
 
 #if POD_PITU
@@ -26,6 +29,16 @@
 
 @end
 #endif
+
+@interface TCPushDecorateView()
+
+@property (nonatomic, weak) LiveGiftShowCustom *customGiftShow;
+@property (nonatomic, strong) NSArray <LiveGiftListModel *> *giftArr;
+@property (nonatomic, strong) NSArray *giftDataSource;
+
+@property (nonatomic, strong) LiveUserModel *userModel;
+
+@end
 
 @implementation TCPushDecorateView
 {
@@ -107,13 +120,18 @@
         _tap =[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(clickScreen:)];
         [self addGestureRecognizer:_tap];
 
-        _audioEffectArry = [NSMutableArray arrayWithObjects:@"原声", @"KTV", @"房间", @"会堂", @"低沉", @"洪亮", @"金属", @"磁性", nil];
+        _audioEffectArry = @[@"原声", @"KTV", @"房间", @"会堂", @"低沉", @"洪亮", @"金属", @"磁性"].mutableCopy;
         _audioEffectViewArry = [NSMutableArray arrayWithCapacity:8];
         
         _audioEffectSelectedType = 0;
         
        [self initUI];
     }
+
+    // init gift arr
+    self.giftArr = [LiveGiftListModel mj_objectArrayWithKeyValuesArray:self.giftDataSource];
+    [self customGiftShow];
+
     return self;
 }
 
@@ -749,6 +767,89 @@
     [self addSubview:_vBeauty]; // log挡住了美颜
 }
 
+
+#pragma mark - 礼物动画相关
+
+- (LiveGiftShowCustom *)customGiftShow {
+    if (!_customGiftShow) {
+        _customGiftShow = [LiveGiftShowCustom addToView:self];
+        _customGiftShow.addMode = LiveGiftAddModeAdd;
+        [_customGiftShow setMaxGiftCount:2];
+        [_customGiftShow setShowMode:LiveGiftShowModeFromTopToBottom];
+        [_customGiftShow setAppearModel:LiveGiftAppearModeLeft];
+        [_customGiftShow setHiddenModel:LiveGiftHiddenModeLeft];
+        [_customGiftShow enableInterfaceDebug:NO];
+//        _customGiftShow.delegate = self;
+    }
+    return _customGiftShow;
+}
+
+- (LiveUserModel *)userModel {
+    if (!_userModel) {
+        _userModel = [[LiveUserModel alloc] init];
+        TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+        _userModel.name = profile.nickName;
+        _userModel.iconUrl = profile.faceURL;
+    }
+    return _userModel;
+}
+
+- (NSArray *)giftDataSource{
+    if (!_giftDataSource) {
+        _giftDataSource = @[
+                @{
+                        @"name": @"棒棒糖",
+                        @"rewardMsg": @"送出棒棒糖",
+                        @"personSort": @"0",
+                        @"goldCount": @"6",
+                        @"type": @"0",
+                        @"picUrl": @"gift_sugar",
+                },
+                @{
+                        @"name": @"生日蛋糕",
+                        @"rewardMsg": @"献上生日蛋糕",
+                        @"personSort": @"0",
+                        @"goldCount": @"66",
+                        @"type": @"1",
+                        @"picUrl": @"gift_cake",
+                },
+                @{
+                        @"name": @"钻戒",
+                        @"rewardMsg": @"送出钻戒",
+                        @"personSort": @"0",
+                        @"goldCount": @"1314",
+                        @"type": @"2",
+                        @"picUrl": @"gift_ring",
+                },
+                @{
+                        @"name": @"跑车",
+                        @"rewardMsg": @"送出跑车",
+                        @"personSort": @"0",
+                        @"goldCount": @"6666",
+                        @"type": @"3",
+                        @"picUrl": @"gift_car",
+                },
+                @{
+                        @"name": @"豪华游艇",
+                        @"rewardMsg": @"送出豪华游艇",
+                        @"personSort": @"0",
+                        @"goldCount": @"13140",
+                        @"type": @"4",
+                        @"picUrl": @"gift_ship"
+                },
+                @{
+                        @"name": @"火箭",
+                        @"rewardMsg": @"送出火箭",
+                        @"personSort": @"0",
+                        @"goldCount": @"66666",
+                        @"type": @"5",
+                        @"picUrl": @"gift_racket"
+                },
+        ];
+    }
+    return _giftDataSource;
+}
+
 -(void)selectBeauty:(UIButton *)button{
     switch (button.tag) {
         case 0:
@@ -838,7 +939,7 @@
 
 - (void)selectEffect:(UIButton *)button {
     for (int i=0; i<_audioEffectViewArry.count; ++i) {
-        UIButton *btn = (UIButton *)[_audioEffectViewArry objectAtIndex:i];
+        UIButton *btn = (UIButton *) _audioEffectViewArry[i];
         btn.selected = NO;
         [btn setBackgroundImage:[UIImage imageNamed:@"round-unselected"] forState:UIControlStateNormal];
     }
@@ -1010,7 +1111,7 @@
 -(void)keyboardFrameDidChange:(NSNotification*)notice
 {
     NSDictionary * userInfo = notice.userInfo;
-    NSValue * endFrameValue = [userInfo objectForKey:UIKeyboardFrameEndUserInfoKey];
+    NSValue * endFrameValue = userInfo[UIKeyboardFrameEndUserInfoKey];
     CGRect endFrame = endFrameValue.CGRectValue;
     [UIView animateWithDuration:0.25 animations:^{
         if (endFrame.origin.y == self.height) {
@@ -1118,7 +1219,7 @@
 }
 
 - (void)clickMusic:(UIButton *)button {
-    [self selectEffect:[_audioEffectViewArry objectAtIndex:_audioEffectSelectedType]];
+    [self selectEffect:_audioEffectViewArry[_audioEffectSelectedType]];
     if (self.delegate) [self.delegate clickMusic:button];
 }
 
@@ -1136,6 +1237,7 @@
 
 -(void)clickLog:(UIButton *)button{
     if (self.delegate) [self.delegate clickLog:button];
+    NSLog(@"click log");
 }
 -(void)sliderValueChange:(UISlider*) slider{
     if (self.delegate) [self.delegate sliderValueChange:slider];
@@ -1275,10 +1377,115 @@
 
             break;
         }
+
+        // todo: handle gift msg
+        case AVIMCMD_Custom_Gift: {
+            NSArray *giftArray = [msgText componentsSeparatedByString:@","];
+            NSString *giftName = giftArray[0];
+            NSInteger giftNumber = [giftArray[1] intValue];
+            NSLog(@"received gift: %@, number: %d", giftName, giftNumber);
+            NSUInteger index = 0;
+            if ([giftName equalsString:@"棒棒糖"]) {
+                index = 0;
+            } else if ([giftName equalsString:@"生日蛋糕"]) {
+                index = 1;
+            } else if ([giftName equalsString:@"钻戒"]) {
+                index = 2;
+            } else if ([giftName equalsString:@"跑车"]) {
+                index = 3;
+            } else if ([giftName equalsString:@"豪华游艇"]) {
+                index = 4;
+            } else if ([giftName equalsString:@"火箭"]) {
+                index = 5;
+            }
+            LiveUserModel *user = [[LiveUserModel alloc] init];
+            user.name = info.imUserName;
+            user.iconUrl = info.imUserIconUrl;
+            LiveGiftShowModel *model = [LiveGiftShowModel giftModel:self.giftArr[index] userModel:user];
+            model.toNumber = (NSUInteger) giftNumber;
+            [self.customGiftShow animatedWithGiftModel:model];
+            [self giftAnimate:giftName];
+            break;
+        }
             
         default:
             break;
     }
+}
+
+- (void)giftAnimate: (NSString *)giftName {
+    CGFloat width = self.bounds.size.width;
+    CGFloat height = self.bounds.size.height;
+    NSString *giftPicName = @"";
+    if ([giftName isEqualToString:@"火箭"]) {
+        giftPicName = @"gift_racket_vertical";
+        UIImageView *imgView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:giftPicName]];
+        imgView.frame = CGRectMake(width/2 - 85/2, height, 85, 250);
+        [self addSubview:imgView];
+        CAKeyframeAnimation *animation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
+        animation.values = @[[NSValue valueWithCGPoint:CGPointMake(width/2, height + 250/2)],
+                [NSValue valueWithCGPoint:CGPointMake(width/2, height - 250)],
+                [NSValue valueWithCGPoint:CGPointMake(width/2, -250)]];
+        animation.keyTimes = @[@0, @0.3, @1.0];
+        animation.duration = 2;
+        animation.removedOnCompletion = NO;
+        animation.fillMode = kCAFillModeForwards;
+        animation.rotationMode = kCAAnimationRotateAuto;
+        [imgView.layer addAnimation:animation forKey:@"keyframe"];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)2*NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+            [imgView removeFromSuperview];
+        });
+
+    } else if ([giftName isEqualToString:@"豪华游艇"]) {
+        giftPicName = @"gift_ship";
+
+        UIImageView *imgView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:giftPicName]];
+        imgView.frame = CGRectMake(-300, height/2 - 82, 300, 164);
+        imgView.transform = CGAffineTransformScale(imgView.transform, 0.8f, 0.8f);
+        [self addSubview:imgView];
+
+        CABasicAnimation *animationMove = [CABasicAnimation animationWithKeyPath:@"position"];
+        animationMove.toValue = [NSValue valueWithCGPoint:CGPointMake(width+150, height/2)];
+        animationMove.duration = 1.5;
+        animationMove.removedOnCompletion = NO;
+        animationMove.fillMode = kCAFillModeForwards;
+
+        [imgView.layer addAnimation:animationMove forKey:@"ship"];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)2*NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+            [imgView removeFromSuperview];
+        });
+
+    } else if ([giftName isEqualToString:@"跑车"]) {
+        giftPicName = @"gift_car";
+
+        UIImageView *imgView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:giftPicName]];
+        imgView.frame = CGRectMake(-300, height/2 - 60, 300, 120);
+        [self addSubview:imgView];
+
+        CABasicAnimation *animationMove = [CABasicAnimation animationWithKeyPath:@"position"];
+        animationMove.toValue = [NSValue valueWithCGPoint:CGPointMake(width+150, height/2)];
+        animationMove.duration = 1.2;
+        animationMove.removedOnCompletion = NO;
+        animationMove.fillMode = kCAFillModeForwards;
+
+        CABasicAnimation *animationScale = [CABasicAnimation animationWithKeyPath:@"transform.scale"];
+        animationScale.fromValue = @0.3;
+        animationScale.toValue = @1.0;
+        animationScale.duration = 1.2;
+        animationScale.autoreverses = NO;
+
+        CAAnimationGroup *group = [CAAnimationGroup animation];
+        group.duration = 1.2;
+        group.fillMode = kCAFillModeForwards;
+        group.removedOnCompletion = NO;
+        group.animations = @[animationMove, animationScale];
+
+        [imgView.layer addAnimation:group forKey:@"car"];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)1.5*NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+            [imgView removeFromSuperview];
+        });
+    }
+
 }
 
 #pragma mark UITextFieldDelegate

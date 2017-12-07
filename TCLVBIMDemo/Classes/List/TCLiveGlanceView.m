@@ -25,11 +25,12 @@
 
 - (void)initUI {
     _coverPic = [[UIImageView alloc] init];
-    [_coverPic setImage:[UIImage imageNamed:@"bg.jpg"]];
+    [_coverPic setImage:[UIImage imageNamed:@"bg_nolive@2x.png"]];
     _coverPic.layer.masksToBounds = YES;
     [self addSubview:_coverPic];
 
-    _headPic = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"default_user"]];
+//    _headPic = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"default_user"]];
+    _headPic = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"no_user.jpeg"]];
     _headPic.layer.masksToBounds = YES;
     _headPic.layer.borderWidth = 1;
     _headPic.layer.borderColor = [UIColor whiteColor].CGColor;  //头像外圈颜色

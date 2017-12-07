@@ -12,7 +12,14 @@
 
 - (void)onTapLiveView: (TCLiveInfo *)liveInfo;
 
+- (void)onClickEnterBtn: (LiveType)groupType;
+
 @end
+
+typedef NS_ENUM(NSInteger, TCLiveGroupCellType) {
+    TCLiveGroupCellTypeDefault,
+    TCLiveGroupCellTypeHeader
+};
 
 /**
  * 首页直播列表组Cell类
@@ -23,6 +30,8 @@
 
 @property (assign, atomic) CGFloat height;
 
-@property (weak, nonatomic) id delegate;
+@property (weak, nonatomic) id<TCLiveGroupCellDelegate> delegate;
+
+- (void)initFromType: (TCLiveGroupCellType)type;
 
 @end

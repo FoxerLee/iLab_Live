@@ -31,6 +31,10 @@
     [self sendMessage:AVIMCMD_Custom_Text userId:userId nickName:nickName headPic:headPic msg:msg];
 }
 
+- (void)sendGiftMessage:(NSString *)userId nickName:(NSString *)nickName headPic:(NSString *)headPic msg:(NSString *)msg {
+    [self sendMessage:AVIMCMD_Custom_Gift userId:userId nickName:nickName headPic:headPic msg:msg];
+}
+
 - (void)sendEnterLiveRoomMessage:(NSString *)userId nickName:(NSString *)nickName headPic:(NSString *)headPic
 {
     [self sendMessage:AVIMCMD_Custom_EnterLive userId:userId nickName:nickName headPic:headPic msg:nil];
@@ -62,7 +66,15 @@
 {
     [self sendMessage:AVIMCMD_Custom_Danmaku userId:userId nickName:nickName headPic:headPic msg:msg];
 }
-
+/**
+ * 发送消息
+ * @param cmd  消息类型 6 gift
+ * @param userId
+ * @param nickName
+ * @param headPic
+ * @param msgContent  "giftName,number", type: "棒棒糖","生日蛋糕","钻戒","跑车","豪华游艇","火箭"
+ */
+// TODO: add gift msg handle
 - (void)sendMessage:(AVIMCommand)cmd userId:(NSString *)userId nickName:(NSString *)nickName headPic:(NSString *)headPic msg:(NSString *)msgContent
 {
     if ((AVIMCMD_Custom_Text == cmd || AVIMCMD_Custom_Danmaku == cmd) && msgContent.length == 0)

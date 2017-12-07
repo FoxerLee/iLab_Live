@@ -90,7 +90,7 @@
                 _btnLinkMic.bounds = CGRectMake(0, 0, CGRectGetWidth(rectBtnLog), CGRectGetHeight(rectBtnLog));
                 [_btnLinkMic setImage:[UIImage imageNamed:@"linkmic_on"] forState:UIControlStateNormal];
                 [_btnLinkMic addTarget:self action:@selector(clickBtnLinkMic:) forControlEvents:UIControlEventTouchUpInside];
-                [_logicView addSubview:_btnLinkMic];
+//                [_logicView addSubview:_btnLinkMic];
                 
                 //Button: 前置后置摄像头切换
                 CGRect rectBtnLinkMic = _btnLinkMic.frame;

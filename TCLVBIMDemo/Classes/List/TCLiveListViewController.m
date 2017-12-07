@@ -18,6 +18,8 @@
 #import "TCPlayViewController_LinkMic.h"
 #import "UIColor+MLPFlatColors.h"
 #import "TCLiveGroupCell.h"
+#import "TCLiveGroupViewController.h"
+#import "NSString+Common.h"
 
 
 @interface TCLiveListViewController ()<UICollectionViewDelegate,UICollectionViewDataSource,
@@ -228,7 +230,7 @@
 
     [self.view addSubview:tabView];
 
-    //self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0,tabView.bottom, SCREEN_WIDTH, self.view.height - tabView.height - statuBarHeight) //style:UITableViewStylePlain];
+//    self.tableView = [[UITableView alloc] initWithFrame:CGRectMake(0,tabView.bottom, SCREEN_WIDTH, self.view.height - tabView.height - statuBarHeight)//style:UITableViewStylePlain];
 
 
 //    UICollectionViewFlowLayout *layout = [[UICollectionViewFlowLayout alloc] init];
@@ -281,10 +283,10 @@
         [_liveListMgr queryVideoList:_videoType getType:GetType_Up];
     }];
     
-    self.tableView.mj_footer = [MJRefreshAutoNormalFooter footerWithRefreshingBlock:^{
-        self.isLoading = YES;
-        [_liveListMgr queryVideoList:_videoType getType:GetType_Down];
-    }];
+//    self.tableView.mj_footer = [MJRefreshAutoNormalFooter footerWithRefreshingBlock:^{
+//        self.isLoading = YES;
+//        [_liveListMgr queryVideoList:_videoType getType:GetType_Down];
+//    }];
 
     // 先加载缓存的数据，然后再开始网络请求，以防用户打开是看到空数据
     [self.liveListMgr loadLivesFromArchive];
@@ -371,27 +373,41 @@
 }
 
 - (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    return _liveGroups.count;
+    return _liveGroups.count + 1;
 }
 
 - (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath {
-    TCLiveGroupCell *cell = [tableView dequeueReusableCellWithIdentifier:@"TCLiveGroupCell"];
-    if (cell == nil) {
-        cell = [[TCLiveGroupCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"TCLiveGroupCell"];
+    TCLiveGroupCell *cell;
+    if (indexPath.row == 0) {
+        cell = [tableView dequeueReusableCellWithIdentifier:@"TCLiveGroupCell2"];
+        if (cell == nil) {
+            cell = [[TCLiveGroupCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"TCLiveGroupCell2"];
+        }
+        [cell initFromType:TCLiveGroupCellTypeHeader];
+    } else {
+        cell = [tableView dequeueReusableCellWithIdentifier:@"TCLiveGroupCell"];
+        if (cell == nil) {
+            cell = [[TCLiveGroupCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"TCLiveGroupCell"];
+        }
+        [cell initFromType:TCLiveGroupCellTypeDefault];
+        TCLiveGroupInfo *group = _liveGroups[indexPath.row - 1];
+        NSLog(@"row: %d", indexPath.row);
+        NSLog(@"group name: %@", group.groupName);
+        cell.group = group;
+        cell.selectionStyle = UITableViewCellSelectionStyleNone;
     }
-    TCLiveGroupInfo *group = _liveGroups[indexPath.row];
-    NSLog(@"row: %d", indexPath.row);
-    NSLog(@"group name: %@", group.groupName);
-    cell.group = group;
-    cell.selectionStyle = UITableViewCellSelectionStyleNone;
     cell.delegate = self;           // 为直播预览图点击事件设置代理
     return cell;
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath {
     TCLiveGroupCell *cell = _cells[indexPath.row];
-    cell.group = _liveGroups[indexPath.row];
-
+    if (indexPath.row == 0) {
+        [cell initFromType:TCLiveGroupCellTypeHeader];
+    } else {
+        [cell initFromType:TCLiveGroupCellTypeDefault];
+        cell.group = _liveGroups[indexPath.row - 1];
+    }
     return cell.height;
 }
 
@@ -399,18 +415,66 @@
 #pragma mark - TCLiveGroupCell delegate
 - (void)onTapLiveView:(TCLiveInfo *)liveInfo {
     NSLog(@"tap test %@", liveInfo.userinfo.nickname);
-    [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(playError:) name:kTCLivePlayError object:nil];
-    // MARK: 打开播放界面
-    if (_playVC == nil) {
-        _playVC = [[TCPlayViewController_LinkMic alloc] initWithPlayInfo:liveInfo videoIsReady:^{
-            if (!_hasEnterplayVC) {
-                [[TCBaseAppDelegate sharedAppDelegate] pushViewController:_playVC animated:YES];
-                _hasEnterplayVC = YES;
-            }
-        }];
-    }
+    // liveView 持有的live不是用来填充的fakeLive，则打开播放控制器
+    if (![liveInfo.playurl isEqualToString:@"nolive"]) {
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(playError:) name:kTCLivePlayError object:nil];
+        // MARK: 打开播放界面
+        if (_playVC == nil) {
+            _playVC = [[TCPlayViewController_LinkMic alloc] initWithPlayInfo:liveInfo videoIsReady:^{
+                if (!_hasEnterplayVC) {
+                    [[TCBaseAppDelegate sharedAppDelegate] pushViewController:_playVC animated:YES];
+                    _hasEnterplayVC = YES;
+                }
+            }];
+        }
 
-    [self performSelector:@selector(enterPlayVC:) withObject:_playVC afterDelay:0.5];
+        [self performSelector:@selector(enterPlayVC:) withObject:_playVC afterDelay:0.5];
+    }
+}
+
+- (void)onClickEnterBtn:(LiveType)groupType {
+    TCLiveGroupInfo *group;
+    switch (groupType) {
+        case LiveTypeGame: {
+            NSLog(@"game");
+            group = self.liveGroups[0];
+        }
+        break;
+        case LiveTypeGirls: {
+            NSLog(@"girls");
+            group = self.liveGroups[1];
+        }
+        break;
+        case LiveTypeOutdoor: {
+            NSLog(@"outdoor");
+            group = self.liveGroups[2];
+        }
+        break;
+        case LiveTypeMusic:
+            NSLog(@"music");
+            group = self.liveGroups[3];
+            break;
+        case LiveTypeSport:
+            NSLog(@"sport");
+            group = self.liveGroups[4];
+            break;
+        case LiveTypeEdu:
+            NSLog(@"edu");
+            group = self.liveGroups[5];
+            break;
+        case LiveTypeFood:
+            NSLog(@"food");
+            group = self.liveGroups[6];
+            break;
+        case LiveTypeACG:
+            NSLog(@"acg");
+            group = self.liveGroups[7];
+            break;
+        default:{
+        }
+    }
+    TCLiveGroupViewController *groupVC = [[TCLiveGroupViewController alloc] initWithGroupInfo:group];
+    [self.navigationController pushViewController:groupVC animated:YES];
 }
 
 //- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
@@ -587,10 +651,54 @@
     NSMutableArray *foodLives       = [NSMutableArray array];
     NSMutableArray *acgLives        = [NSMutableArray array];
 
+    TCLiveUserInfo *fakeUser = [[TCLiveUserInfo alloc] init];
+    fakeUser.nickname = @"无主播";
+    TCLiveInfo *fakeLive = [[TCLiveInfo alloc] init];
+    fakeLive.userinfo = fakeUser;
+    fakeLive.title = @"暂无直播";
+    fakeLive.playurl = @"nolive";
+
     if (self.lives.count != 0) {
         for (TCLiveInfo *live in self.lives) {
-            // TODO: 编写分组逻辑
-            [eduLives addObject:live];
+            // TODO: 测试分组逻辑
+            NSArray *separateArray = [live.title componentsSeparatedByString:@";;;"];
+            NSString *typeName = @"";
+            NSString *trueTitle = @"";
+            if (separateArray.count > 2) {
+                trueTitle = separateArray[0];
+                for (int i = 0; i < separateArray.count - 1; i++) {
+                    trueTitle = [NSString stringWithFormat:@"%@;;;%@", trueTitle, separateArray[i]];
+                }
+                typeName = separateArray[separateArray.count-1];
+            } else if (separateArray.count == 1) {
+                trueTitle = separateArray[0];
+                typeName = @"游戏";
+            } else {
+                trueTitle = separateArray[0];
+                typeName = separateArray[1];
+            }
+
+            live.title = trueTitle;
+
+            if ([typeName equalsString:@"游戏"]) {
+                [gameLives addObject:live];
+            } else if ([typeName equalsString:@"美妆"]) {
+                [girlsLives addObject:live];
+            } else if ([typeName equalsString:@"户外"]) {
+                [outdoorLives addObject:live];
+            } else if ([typeName equalsString:@"音乐"]) {
+                [musicLives addObject:live];
+            } else if ([typeName equalsString:@"体育"]) {
+                [sportsLives addObject:live];
+            } else if ([typeName equalsString:@"教育"]) {
+                [eduLives addObject:live];
+            } else if ([typeName equalsString:@"美食"]) {
+                [foodLives addObject:live];
+            } else if ([typeName equalsString:@"二次元"]) {
+                [acgLives addObject:live];
+            } else {
+                [gameLives addObject:live];
+            }
         }
     }
 
@@ -598,38 +706,93 @@
         TCLiveGroupInfo *groupGameLives = [TCLiveGroupInfo initWithName:@"游戏达人" andType:LiveTypeGame
                                                               andDetail:nil andLiveList:gameLives];
         [liveGroups addObject:groupGameLives];
+    } else {
+        [gameLives addObject:[fakeLive copy]];
+        [gameLives addObject:[fakeLive copy]];
+        TCLiveGroupInfo *groupGameLives = [TCLiveGroupInfo initWithName:@"游戏达人" andType:LiveTypeGame
+                                                              andDetail:nil andLiveList:gameLives];
+        [liveGroups addObject:groupGameLives];
     }
+
     if (girlsLives.count != 0) {
         TCLiveGroupInfo *groupGirlsLives = [TCLiveGroupInfo initWithName:@"美妆" andType:LiveTypeGirls
                                                                andDetail:nil andLiveList:girlsLives];
         [liveGroups addObject:groupGirlsLives];
+    } else {
+        [girlsLives addObject:[fakeLive copy]];
+        [girlsLives addObject:[fakeLive copy]];
+        TCLiveGroupInfo *groupGirlsLives = [TCLiveGroupInfo initWithName:@"美妆" andType:LiveTypeGirls
+                                                               andDetail:nil andLiveList:girlsLives];
+        [liveGroups addObject:groupGirlsLives];
     }
+
     if (outdoorLives.count != 0) {
         TCLiveGroupInfo *groupOutdoorLives = [TCLiveGroupInfo initWithName:@"户外" andType:LiveTypeOutdoor
                                                                  andDetail:nil andLiveList:outdoorLives];
         [liveGroups addObject:groupOutdoorLives];
+    } else {
+        [outdoorLives addObject:[fakeLive copy]];
+        [outdoorLives addObject:[fakeLive copy]];
+        TCLiveGroupInfo *groupOutdoorLives = [TCLiveGroupInfo initWithName:@"户外" andType:LiveTypeOutdoor
+                                                                 andDetail:nil andLiveList:outdoorLives];
+        [liveGroups addObject:groupOutdoorLives];
     }
+
     if (musicLives.count != 0) {
         TCLiveGroupInfo *groupMusicLives = [TCLiveGroupInfo initWithName:@"音乐" andType:LiveTypeMusic
                                                                andDetail:nil andLiveList:musicLives];
         [liveGroups addObject:groupMusicLives];
+    } else {
+        [musicLives addObject:[fakeLive copy]];
+        [musicLives addObject:[fakeLive copy]];
+        TCLiveGroupInfo *groupMusicLives = [TCLiveGroupInfo initWithName:@"音乐" andType:LiveTypeMusic
+                                                               andDetail:nil andLiveList:musicLives];
+        [liveGroups addObject:groupMusicLives];
     }
+
     if (sportsLives.count != 0) {
         TCLiveGroupInfo *groupSportsLives = [TCLiveGroupInfo initWithName:@"体育" andType:LiveTypeSport
                                                                 andDetail:nil andLiveList:sportsLives];
         [liveGroups addObject:groupSportsLives];
+    } else {
+        [sportsLives addObject:[fakeLive copy]];
+        [sportsLives addObject:[fakeLive copy]];
+        TCLiveGroupInfo *groupSportsLives = [TCLiveGroupInfo initWithName:@"体育" andType:LiveTypeSport
+                                                                andDetail:nil andLiveList:sportsLives];
+        [liveGroups addObject:groupSportsLives];
     }
+
     if (eduLives.count != 0) {
         TCLiveGroupInfo *groupEduLives = [TCLiveGroupInfo initWithName:@"教育" andType:LiveTypeEdu
                                                              andDetail:nil andLiveList:eduLives];
         [liveGroups addObject:groupEduLives];
+    } else {
+        [eduLives addObject:[fakeLive copy]];
+        [eduLives addObject:[fakeLive copy]];
+        TCLiveGroupInfo *groupEduLives = [TCLiveGroupInfo initWithName:@"教育" andType:LiveTypeEdu
+                                                             andDetail:nil andLiveList:eduLives];
+        [liveGroups addObject:groupEduLives];
     }
+
     if (foodLives.count != 0) {
         TCLiveGroupInfo *groupFoodLives = [TCLiveGroupInfo initWithName:@"美食" andType:LiveTypeFood
                                                               andDetail:nil andLiveList:foodLives];
         [liveGroups addObject:groupFoodLives];
+    } else {
+        [foodLives addObject:[fakeLive copy]];
+        [foodLives addObject:[fakeLive copy]];
+        TCLiveGroupInfo *groupFoodLives = [TCLiveGroupInfo initWithName:@"美食" andType:LiveTypeFood
+                                                              andDetail:nil andLiveList:foodLives];
+        [liveGroups addObject:groupFoodLives];
     }
+
     if (acgLives.count != 0) {
+        TCLiveGroupInfo *groupACGLives = [TCLiveGroupInfo initWithName:@"二次元" andType:LiveTypeACG
+                                                             andDetail:nil andLiveList:acgLives];
+        [liveGroups addObject:groupACGLives];
+    } else {
+        [acgLives addObject:[fakeLive copy]];
+        [acgLives addObject:[fakeLive copy]];
         TCLiveGroupInfo *groupACGLives = [TCLiveGroupInfo initWithName:@"二次元" andType:LiveTypeACG
                                                              andDetail:nil andLiveList:acgLives];
         [liveGroups addObject:groupACGLives];
@@ -638,7 +801,8 @@
     self.liveGroups = liveGroups;
 
     _cells = [[NSMutableArray alloc] init];
-    for (int i = 0; i < _liveGroups.count; ++i) {
+    // modify
+    for (int i = 0; i < _liveGroups.count + 1; ++i) {
         TCLiveGroupCell *cell = [[TCLiveGroupCell alloc] init];
         [_cells addObject:cell];
     }

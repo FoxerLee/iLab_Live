@@ -67,6 +67,7 @@ typedef enum : NSUInteger {
     
     _showVC = [TCLiveListViewController new];
     _showVC.listener = self;
+    
 
     //TODO: 替换v1 v2两个 UIViewController
     UIViewController *v1 = [TCSubscribeViewController new];
@@ -82,14 +83,13 @@ typedef enum : NSUInteger {
 
     [[UITabBarItem appearance] setTitleTextAttributes:normalFontAttrs forState:UIControlStateNormal];
     [[UITabBarItem appearance] setTitleTextAttributes:selectFontAttrs forState:UIControlStateSelected];
-
 //    [self addChildViewController:_showVC imageName:@"video_normal" selectedImageName:@"video_click" title:nil];
     [self addChildViewController:_showVC imageName:@"tab_main_normal" selectedImageName:@"tab_main_press" title:@"首页"];
     [self addChildViewController:v1 imageName:@"tab_sub_normal" selectedImageName:@"tab_sub_press" title:@"订阅"];
     [self addChildViewController:_ imageName:@"" selectedImageName:@"" title:nil];
     [self addChildViewController:v2 imageName:@"tab_message_normal" selectedImageName:@"tab_message_press" title:@"消息"];
 //    [self addChildViewController:v3 imageName:@"User_normal" selectedImageName:@"User_click" title:nil];
-    [self addChildViewController:v3 imageName:@"tab_user_normal" selectedImageName:@"tab_user_press" title:@"我"];
+    [self addChildViewController:v3 imageName:@"tab_user_normal" selectedImageName:@"tab_user_press" title:@"我的"];
 
 
     self.delegate = self; // this make tabBaController call

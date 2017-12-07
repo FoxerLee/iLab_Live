@@ -37,6 +37,7 @@ typedef NS_ENUM(NSInteger, TCMsgModelType)
     TCMsgModelType_MemberQuitRoom      = 2,   //退出房间消息
     TCMsgModelType_DanmaMsg            = 3,   //弹幕消息
     TCMsgModelType_Praise              = 4,   //点赞消息
+    TCMsgModelType_Gift                = 5,   //礼物消息
 };
 
 /**

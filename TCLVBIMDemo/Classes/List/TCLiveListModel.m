@@ -8,8 +8,20 @@
 
 #import "TCLiveListModel.h"
 
+@interface TCLiveUserInfo()<NSCopying>
 
+@end
 @implementation TCLiveUserInfo
+
+- (id)copyWithZone:(nullable NSZone *)zone {
+    TCLiveUserInfo *copyUser = (TCLiveUserInfo *) [[[self class] allocWithZone:zone] init];
+    copyUser.nickname = _nickname;
+    copyUser.frontcover = _frontcover;
+    copyUser.headpic = _headpic;
+    copyUser.location = _location;
+
+    return copyUser;
+}
 
 - (void) encodeWithCoder: (NSCoder *)coder {
     [coder encodeObject:_nickname forKey:@"nickname" ];
@@ -32,7 +44,20 @@
 
 @end
 
+@interface TCLiveInfo()<NSCopying>
+
+@end
+
 @implementation TCLiveInfo
+
+- (id)copyWithZone:(nullable NSZone *)zone {
+    TCLiveInfo *copyLive = (TCLiveInfo *) [[[self class] allocWithZone:zone] init];
+    copyLive.playurl = _playurl;
+    copyLive.userinfo = [_userinfo copy];
+    copyLive.title = _title;
+
+    return copyLive;
+}
 
 - (void) encodeWithCoder: (NSCoder *)coder {
     [coder encodeObject:_userid forKey:@"userid" ];

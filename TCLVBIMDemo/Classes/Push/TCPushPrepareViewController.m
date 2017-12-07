@@ -27,6 +27,8 @@
 #import "UMSocialUIManager.h"
 #import <UMSocialCore/UMSocialCore.h>
 #import "NSString+Common.h"
+#import "MJRefreshComponent.h"
+
 #if YOUTU_AUTH
 #import "TCYTRealNameAuthViewController.h"
 #endif
@@ -46,6 +48,8 @@ BOOL g_bNeedEnterPushSettingView = NO;
 @property (weak) IBOutlet UILabel               *locationLabel;
 @property (weak) IBOutlet UIImageView           *locationImageView;
 @property (weak) IBOutlet UISwitch              *locationSwitch;
+@property (weak, nonatomic) IBOutlet UIView *lastXibView;
+
 @property (nonatomic , retain)  UIButton        *publishBtn;
 
 @property (strong) UIImage                      *selectedCoverImage;
@@ -54,10 +58,14 @@ BOOL g_bNeedEnterPushSettingView = NO;
 
 @property (weak, nonatomic) IBOutlet NSLayoutConstraint *titleTextViewTopConstraint;
 
+@property (nonatomic, strong) UILabel *groupTitleLabel;
+@property (nonatomic, strong) NSString *groupTitle;
+
 
 - (IBAction)onShowLocationSwitch:(id)sender;
 - (IBAction)onSelectImage:(id)sender;
 - (IBAction)onSelectSharePlatform:(UIButton *)sender;
+
 @end
 
 @implementation TCPushPrepareViewController {
@@ -77,7 +85,153 @@ BOOL g_bNeedEnterPushSettingView = NO;
     [self.coverImageView sd_setImageWithURL:[NSURL URLWithString:[TCUtil transImageURL2HttpsURL:profile.coverURL]] placeholderImage:[UIImage imageNamed:@"defaul_publishcover"]];
     
     [self showYTAuthAlertDlg];
+
+    self.groupTitle = @"游戏";
+    [self initGroupView];
 }
+
+- (void)initGroupView {
+    float screenWidth = [[UIScreen mainScreen] bounds].size.height;
+    float baseViewHeight = 90;
+    UIView *baseGroupView = [[UIView alloc] init];
+    baseGroupView.frame = CGRectMake(0, CGRectGetMaxY(_lastXibView.frame) + 2, screenWidth, baseViewHeight);
+    baseGroupView.backgroundColor = [UIColor whiteColor];
+    [self.view addSubview:baseGroupView];
+
+    UILabel *groupTipLabel = [[UILabel alloc] init];
+    groupTipLabel.frame = CGRectMake(8, 10, 40, 16);
+    groupTipLabel.font = [UIFont systemFontOfSize:13];
+    groupTipLabel.text = @"分类:";
+//    groupTipLabel.backgroundColor = [UIColor darkGrayColor];
+    [baseGroupView addSubview:groupTipLabel];
+
+    _groupTitleLabel = [[UILabel alloc] init];
+    _groupTitleLabel.frame = CGRectMake(CGRectGetMaxX(groupTipLabel.frame), groupTipLabel.frame.origin.y, 50, 16);
+    _groupTitleLabel.font = [UIFont systemFontOfSize:13];
+    _groupTitleLabel.text = self.groupTitle;
+    [baseGroupView addSubview:_groupTitleLabel];
+
+    float buttonWidth = 50;
+    float buttonHeight = 25;
+    float buttonInterval = 40;
+
+    // 4 buttons on the first line
+    UIButton *btnGames = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    btnGames.frame = CGRectMake(8, CGRectGetMaxY(groupTipLabel.frame) + 5, buttonWidth, buttonHeight);
+    [btnGames setTitle:@"游戏" forState:UIControlStateNormal];
+    btnGames.backgroundColor = RGB(235, 106, 86);
+    [btnGames setTintColor:[UIColor whiteColor]];
+    btnGames.layer.cornerRadius = buttonHeight/2;
+    btnGames.tag = 0;
+    [btnGames addTarget:self action:@selector(onGroupBtnClick:) forControlEvents:UIControlEventTouchUpInside];
+    [baseGroupView addSubview:btnGames];
+
+    UIButton *btnGirls = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    btnGirls.frame = CGRectMake(CGRectGetMaxX(btnGames.frame) + buttonInterval, btnGames.frame.origin.y, buttonWidth, buttonHeight);
+    [btnGirls setTitle:@"美妆" forState:UIControlStateNormal];
+    btnGirls.backgroundColor = RGB(207, 152, 141);
+    [btnGirls setTintColor:[UIColor whiteColor]];
+    btnGirls.layer.cornerRadius = buttonHeight/2;
+    btnGirls.tag = 1;
+    [btnGirls addTarget:self action:@selector(onGroupBtnClick:) forControlEvents:UIControlEventTouchUpInside];
+    [baseGroupView addSubview:btnGirls];
+
+    UIButton *btnOutdoor = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    btnOutdoor.frame = CGRectMake(CGRectGetMaxX(btnGirls.frame) + buttonInterval, btnGames.frame.origin.y, buttonWidth, buttonHeight);
+    [btnOutdoor setTitle:@"户外" forState:UIControlStateNormal];
+    btnOutdoor.backgroundColor = RGB(49, 109, 122);
+    [btnOutdoor setTintColor:[UIColor whiteColor]];
+    btnOutdoor.layer.cornerRadius = buttonHeight/2;
+    btnOutdoor.tag = 2;
+    [btnOutdoor addTarget:self action:@selector(onGroupBtnClick:) forControlEvents:UIControlEventTouchUpInside];
+    [baseGroupView addSubview:btnOutdoor];
+
+    UIButton *btnMusic = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    btnMusic.frame = CGRectMake(CGRectGetMaxX(btnOutdoor.frame) + buttonInterval, btnGames.frame.origin.y, buttonWidth, buttonHeight);
+    [btnMusic setTitle:@"音乐" forState:UIControlStateNormal];
+    btnMusic.backgroundColor = RGB(115, 151, 125);
+    [btnMusic setTintColor:[UIColor whiteColor]];
+    btnMusic.layer.cornerRadius = buttonHeight/2;
+    btnMusic.tag = 3;
+    [btnMusic addTarget:self action:@selector(onGroupBtnClick:) forControlEvents:UIControlEventTouchUpInside];
+    [baseGroupView addSubview:btnMusic];
+
+    // 4 buttons on the second line
+    UIButton *btnSports = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    btnSports.frame = CGRectMake(8, CGRectGetMaxY(btnGames.frame) + 5, buttonWidth, buttonHeight);
+    [btnSports setTitle:@"体育" forState:UIControlStateNormal];
+    btnSports.backgroundColor = RGB(54, 122, 127);
+    [btnSports setTintColor:[UIColor whiteColor]];
+    btnSports.layer.cornerRadius = buttonHeight/2;
+    btnSports.tag = 4;
+    [btnSports addTarget:self action:@selector(onGroupBtnClick:) forControlEvents:UIControlEventTouchUpInside];
+    [baseGroupView addSubview:btnSports];
+
+    UIButton *btnEdu = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    btnEdu.frame = CGRectMake(CGRectGetMaxX(btnSports.frame) + buttonInterval, btnSports.frame.origin.y, buttonWidth, buttonHeight);
+    [btnEdu setTitle:@"教育" forState:UIControlStateNormal];
+    btnEdu.backgroundColor = RGB(236, 232, 140);
+    [btnEdu setTintColor:[UIColor whiteColor]];
+    btnEdu.layer.cornerRadius = buttonHeight/2;
+    btnEdu.tag = 5;
+    [btnEdu addTarget:self action:@selector(onGroupBtnClick:) forControlEvents:UIControlEventTouchUpInside];
+    [baseGroupView addSubview:btnEdu];
+
+    UIButton *btnFood = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    btnFood.frame = CGRectMake(CGRectGetMaxX(btnEdu.frame) + buttonInterval, btnSports.frame.origin.y, buttonWidth, buttonHeight);
+    [btnFood setTitle:@"美食" forState:UIControlStateNormal];
+    btnFood.backgroundColor = RGB(230, 151, 127);
+    [btnFood setTintColor:[UIColor whiteColor]];
+    btnFood.layer.cornerRadius = buttonHeight/2;
+    btnFood.tag = 6;
+    [btnFood addTarget:self action:@selector(onGroupBtnClick:) forControlEvents:UIControlEventTouchUpInside];
+    [baseGroupView addSubview:btnFood];
+
+    UIButton *btnAcg = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    btnAcg.frame = CGRectMake(CGRectGetMaxX(btnFood.frame) + buttonInterval, btnSports.frame.origin.y, buttonWidth, buttonHeight);
+    [btnAcg setTitle:@"二次元" forState:UIControlStateNormal];
+    btnAcg.backgroundColor = RGB(251, 242, 94);
+    [btnAcg setTintColor:[UIColor whiteColor]];
+    btnAcg.layer.cornerRadius = buttonHeight/2;
+    btnAcg.tag = 7;
+    [btnAcg addTarget:self action:@selector(onGroupBtnClick:) forControlEvents:UIControlEventTouchUpInside];
+    [baseGroupView addSubview:btnAcg];
+
+}
+
+- (void)onGroupBtnClick: (UIButton *)sender {
+    switch (sender.tag) {
+        case 0 :
+            _groupTitle = @"游戏";
+            break;
+        case 1:
+            _groupTitle = @"美妆";
+            break;
+        case 2:
+            _groupTitle = @"户外";
+            break;
+        case 3:
+            _groupTitle = @"音乐";
+            break;
+        case 4:
+            _groupTitle = @"体育";
+            break;
+        case 5:
+            _groupTitle = @"教育";
+            break;
+        case 6:
+            _groupTitle = @"美食";
+            break;
+        case 7:
+            _groupTitle = @"二次元";
+            break;
+        default: {
+
+        }
+    }
+    self.groupTitleLabel.text = self.groupTitle;
+}
+
 
 -(void)showYTAuthAlertDlg
 {
@@ -109,7 +263,7 @@ BOOL g_bNeedEnterPushSettingView = NO;
 -(void)keyboardFrameDidChange:(NSNotification*)notice
 {
     NSDictionary * userInfo = notice.userInfo;
-    NSValue * endFrameValue = [userInfo objectForKey:UIKeyboardFrameEndUserInfoKey];
+    NSValue * endFrameValue = userInfo[UIKeyboardFrameEndUserInfoKey];
     CGRect endFrame = endFrameValue.CGRectValue;
     
     [UIView animateWithDuration:0.25 animations:^{
@@ -507,7 +661,11 @@ BOOL g_bNeedEnterPushSettingView = NO;
 {
     [[TCLoginModel sharedInstance] reLogin:^{
         NSString *myLocation = self.locationSwitch.isOn ? self.locationLabel.text : @"";
-        NSString *myTitle = self.titleTextView.text;
+
+        // 在直播标题中嵌入分类，格式："原直播标题;;;分类名", 例如: "测试;;;游戏"
+//        NSString *myTitle = self.titleTextView.text;
+        NSString *myTitle = [NSString stringWithFormat:@"%@;;;%@", self.titleTextView.text, self.groupTitle];
+
         self.publishBtn.enabled = NO;
         //__weak typeof (self) weakSelf = self;
         NSString *userId = [[TCLoginModel sharedInstance] getLoginParam].identifier;
@@ -540,6 +698,7 @@ BOOL g_bNeedEnterPushSettingView = NO;
     _selectShare = sender;
     [self performSelector:@selector(doHighlight) withObject:nil afterDelay:0];
 }
+
 
 - (void)doHighlight {
     [_selectShare setHighlighted:YES];

@@ -19,6 +19,20 @@
 #import "HUDHelper.h"
 #import "UMSocialUIManager.h"
 #import <UMSocialCore/UMSocialCore.h>
+#import "TCLiveGiftModel.h"
+#import "LiveGiftShowCustom.h"
+#import "MJExtension.h"
+#import "NSString+Common.h"
+
+@interface TCPlayDecorateView()
+
+@property (nonatomic, weak) LiveGiftShowCustom *customGiftShow;
+@property (nonatomic, strong) NSArray <LiveGiftListModel *> *giftArr;
+@property (nonatomic, strong) NSArray *giftDataSource;
+
+@property (nonatomic, strong) LiveUserModel *userModel;
+
+@end
 
 @implementation TCPlayDecorateView
 {
@@ -36,6 +50,15 @@
     BOOL               _bulletBtnIsOn;
     BOOL               _viewsHidden;
     NSMutableArray     *_heartAnimationPoints;
+
+    // add
+    TCLiveGiftPickerView *_giftPickerView;
+    CGFloat _pickerViewHeight;
+    UITextField *giftNumberInput;
+    BOOL keyboardShown;
+    BOOL canEditMsg;
+    CGFloat bottomViewY;
+
 }
 
 -(instancetype)initWithFrame:(CGRect)frame liveInfo:(TCLiveInfo *)liveInfo withLinkMic:(BOOL)linkmic{
@@ -43,11 +66,14 @@
     if (self) {
         _liveInfo      = liveInfo;
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardFrameDidChange:) name:UIKeyboardWillChangeFrameNotification object:nil];
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(keyboardDidShow:) name:UIKeyboardDidShowNotification object:nil];
         [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(onLogout:) name:logoutNotification object:nil];
         UITapGestureRecognizer *tap =[[UITapGestureRecognizer alloc]initWithTarget:self action:@selector(clickScreen:)];
         [self addGestureRecognizer:tap];
-        [self initUI: linkmic];
+//        [self initUI: linkmic];
+        [self initUI];
     }
+    self.giftArr = [LiveGiftListModel mj_objectArrayWithKeyValuesArray:self.giftDataSource];
     return self;
 }
 
@@ -82,6 +108,222 @@
     [self addSubview:_audienceTableView];
 }
 
+- (void)initUI {
+    //close VC
+    _closeBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+    [_closeBtn setFrame:CGRectMake(self.width - 15 - BOTTOM_BTN_ICON_WIDTH, self.height - 50, BOTTOM_BTN_ICON_WIDTH, BOTTOM_BTN_ICON_WIDTH)];
+    [_closeBtn setImage:[UIImage imageNamed:@"close_new"] forState:UIControlStateNormal];
+    [_closeBtn addTarget:self action:@selector(closeVC) forControlEvents:UIControlEventTouchUpInside];
+    [self addSubview:_closeBtn];
+
+    //topview,展示主播头像，在线人数及点赞
+    CGFloat statusBarHeight = [[UIApplication sharedApplication] statusBarFrame].size.height;
+    _topView = [[TCShowLiveTopView alloc] initWithFrame:CGRectMake(5, statusBarHeight + 5, 110, 35) isHost:NO hostNickName:_liveInfo.userinfo.nickname
+                                          audienceCount:_liveInfo.viewercount likeCount:_liveInfo.likecount hostFaceUrl:_liveInfo.userinfo.headpic];
+
+    [self addSubview:_topView];
+
+    int   icon_size = BOTTOM_BTN_ICON_WIDTH;
+    float startSpace = 15;
+    float icon_center_y = self.height - icon_size/2 - startSpace;
+
+    if (_liveInfo.type == TCLiveListItemType_Live) {  // 直播
+        float icon_count = 8;                         // 没有连麦 todo: 调整
+        float icon_center_interval = (self.width - 2*startSpace - icon_size)/(icon_count - 1);
+        float first_icon_center_x = startSpace + icon_size/2;
+        // 发弹幕
+        _btnChat = [UIButton buttonWithType:UIButtonTypeCustom];
+        _btnChat.center = CGPointMake(first_icon_center_x, icon_center_y);
+        _btnChat.bounds = CGRectMake(0, 0, icon_size, icon_size);
+        [_btnChat setImage:[UIImage imageNamed:@"btn_chat"] forState:UIControlStateNormal];
+        [_btnChat addTarget:self action:@selector(clickChat:) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:_btnChat];
+
+        // 分享
+        _btnShare = [UIButton buttonWithType:UIButtonTypeCustom];
+        _btnShare.center = CGPointMake(_closeBtn.center.x - icon_center_interval, icon_center_y);
+        _btnShare.bounds = CGRectMake(0, 0, icon_size, icon_size);
+        [_btnShare setImage:[UIImage imageNamed:@"share_new"] forState:UIControlStateNormal];
+        [_btnShare addTarget:self action:@selector(clickShare:) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:_btnShare];
+
+        _btnRecord = [UIButton buttonWithType:UIButtonTypeCustom];
+        _btnRecord.center = CGPointMake(_closeBtn.center.x - icon_center_interval * 2, icon_center_y);
+        _btnRecord.bounds = CGRectMake(0, 0, icon_size, icon_size);
+        [_btnRecord setImage:[UIImage imageNamed:@"btn_gift"] forState:UIControlStateNormal];
+        [_btnRecord addTarget:self action:@selector(clickGift) forControlEvents:UIControlEventTouchUpInside];
+        [self addSubview:_btnRecord];
+
+        //弹幕
+        _msgTableView = [[TCMsgListTableView alloc] initWithFrame:CGRectMake(15, _btnChat.top - MSG_TABLEVIEW_HEIGHT - MSG_TABLEVIEW_BOTTOM_SPACE, MSG_TABLEVIEW_WIDTH, MSG_TABLEVIEW_HEIGHT) style:UITableViewStyleGrouped];
+        [self addSubview:_msgTableView];
+
+        _bulletViewOne = [[TCMsgBulletView alloc]initWithFrame:CGRectMake(0,_msgTableView.top - MSG_UI_SPACE - MSG_BULLETVIEW_HEIGHT, SCREEN_WIDTH, MSG_BULLETVIEW_HEIGHT)];
+        [self addSubview:_bulletViewOne];
+
+        _bulletViewTwo = [[TCMsgBulletView alloc]initWithFrame:CGRectMake(0, _bulletViewOne.top - MSG_BULLETVIEW_HEIGHT, SCREEN_WIDTH, MSG_BULLETVIEW_HEIGHT)];
+        [self addSubview:_bulletViewTwo];
+
+
+        //输入框
+        _msgInputView = [[UIView alloc] initWithFrame:CGRectMake(0, self.height, self.width, MSG_TEXT_SEND_VIEW_HEIGHT )];
+        _msgInputView.backgroundColor = [UIColor clearColor];
+
+        UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake(0, 0, _msgInputView.width, _msgInputView.height)];
+        imageView.image = [UIImage imageNamed:@"input_comment"];
+
+        UIButton *bulletBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+        bulletBtn.frame = CGRectMake(10, (_msgInputView.height - MSG_TEXT_SEND_FEILD_HEIGHT)/2, MSG_TEXT_SEND_BULLET_BTN_WIDTH, MSG_TEXT_SEND_FEILD_HEIGHT);
+        [bulletBtn setImage:[UIImage imageNamed:@"Switch_OFF"] forState:UIControlStateNormal];
+        [bulletBtn setImage:[UIImage imageNamed:@"Switch_ON"] forState:UIControlStateSelected];
+        [bulletBtn addTarget:self action:@selector(clickBullet:) forControlEvents:UIControlEventTouchUpInside];
+
+        UIButton *sendBtn = [UIButton buttonWithType:UIButtonTypeCustom];
+        sendBtn.frame = CGRectMake(self.width - 15 - MSG_TEXT_SEND_BTN_WIDTH, (_msgInputView.height - MSG_TEXT_SEND_FEILD_HEIGHT)/2, MSG_TEXT_SEND_BTN_WIDTH, MSG_TEXT_SEND_FEILD_HEIGHT);
+        [sendBtn setTitle:@"发送" forState:UIControlStateNormal];
+        [sendBtn.titleLabel setFont:[UIFont systemFontOfSize:16]];
+        [sendBtn setTitleColor:UIColorFromRGB(0x0ACCAC) forState:UIControlStateNormal];
+        [sendBtn setBackgroundColor:[UIColor clearColor]];
+        [sendBtn addTarget:self action:@selector(clickSend) forControlEvents:UIControlEventTouchUpInside];
+
+        UIImageView *msgInputFeildLine1 = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"vertical_line"]];
+        msgInputFeildLine1.frame = CGRectMake(bulletBtn.right + 10, sendBtn.y, 1, MSG_TEXT_SEND_FEILD_HEIGHT);
+
+        UIImageView *msgInputFeildLine2 = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"vertical_line"]];
+        msgInputFeildLine2.frame = CGRectMake(sendBtn.left - 10, sendBtn.y, 1, MSG_TEXT_SEND_FEILD_HEIGHT);
+
+        _msgInputFeild = [[UITextField alloc] initWithFrame:CGRectMake(msgInputFeildLine1.right + 10,sendBtn.y,msgInputFeildLine2.left - msgInputFeildLine1.right - 20,MSG_TEXT_SEND_FEILD_HEIGHT)];
+        _msgInputFeild.backgroundColor = [UIColor clearColor];
+        _msgInputFeild.returnKeyType = UIReturnKeySend;
+        _msgInputFeild.placeholder = @"和大家说点什么吧";
+        _msgInputFeild.delegate = self;
+        _msgInputFeild.textColor = [UIColor blackColor];
+        _msgInputFeild.font = [UIFont systemFontOfSize:14];
+
+
+        [_msgInputView addSubview:imageView];
+        [_msgInputView addSubview:_msgInputFeild];
+        [_msgInputView addSubview:bulletBtn];
+        [_msgInputView addSubview:sendBtn];
+        [_msgInputView addSubview:msgInputFeildLine1];
+        [_msgInputView addSubview:msgInputFeildLine2];
+        [self addSubview:_msgInputView];
+
+
+        float width = self.bounds.size.width;
+        float height = self.bounds.size.height;
+        float pickerViewBottomHeight = 50;
+        _pickerViewHeight = width/3 * 4/5 * 2 + pickerViewBottomHeight;
+
+        TCLiveGiftModel *giftSugar = [TCLiveGiftModel initWithName:@"棒棒糖" andPic:@"gift_sugar" andGoldCount:6];
+        TCLiveGiftModel *giftCake = [TCLiveGiftModel initWithName:@"生日蛋糕" andPic:@"gift_cake" andGoldCount:66];
+        TCLiveGiftModel *giftRing = [TCLiveGiftModel initWithName:@"钻戒" andPic:@"gift_ring" andGoldCount:1314];
+        TCLiveGiftModel *giftCar = [TCLiveGiftModel initWithName:@"跑车" andPic:@"gift_car" andGoldCount:6666];
+        TCLiveGiftModel *giftShip = [TCLiveGiftModel initWithName:@"豪华游艇" andPic:@"gift_ship" andGoldCount:13140];
+        TCLiveGiftModel *giftRacket = [TCLiveGiftModel initWithName:@"火箭" andPic:@"gift_racket" andGoldCount:66666];
+        NSMutableArray *array = [@[giftSugar, giftCake, giftRing, giftCar, giftShip, giftRacket] mutableCopy];
+        _giftPickerView = [[TCLiveGiftPickerView alloc] initWithFrame:CGRectMake(0, height, width, _pickerViewHeight)];
+        _giftPickerView.giftModelList = array;
+        _giftPickerView.goldCount = 20000;
+        _giftPickerView.pickedIndex = 0;
+        _giftPickerView.delegate = self;
+        [self addSubview:_giftPickerView];
+        bottomViewY = _giftPickerView.bottomView.frame.origin.y;
+
+        giftNumberInput = _giftPickerView.giftNumberInput;
+        [giftNumberInput addTarget:self action:@selector(giftNumberChanged:) forControlEvents:UIControlEventEditingChanged];
+        keyboardShown = NO;
+        canEditMsg = YES;
+
+        UITapGestureRecognizer *tap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(closeGiftPickerView)];
+        tap.numberOfTapsRequired = 1;
+        self.userInteractionEnabled = YES;
+        [self addGestureRecognizer:tap];
+    }
+}
+
+#pragma mark - 礼物动画相关
+
+- (LiveGiftShowCustom *)customGiftShow {
+    if (!_customGiftShow) {
+        _customGiftShow = [LiveGiftShowCustom addToView:self];
+        _customGiftShow.addMode = LiveGiftAddModeAdd;
+        [_customGiftShow setMaxGiftCount:2];
+        [_customGiftShow setShowMode:LiveGiftShowModeFromTopToBottom];
+        [_customGiftShow setAppearModel:LiveGiftAppearModeLeft];
+        [_customGiftShow setHiddenModel:LiveGiftHiddenModeLeft];
+        [_customGiftShow enableInterfaceDebug:NO];
+//        _customGiftShow.delegate = self;
+    }
+    return _customGiftShow;
+}
+
+- (LiveUserModel *)userModel {
+    if (!_userModel) {
+        _userModel = [[LiveUserModel alloc] init];
+        TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+        _userModel.name = profile.nickName;
+        _userModel.iconUrl = profile.faceURL;
+    }
+    return _userModel;
+}
+
+- (NSArray *)giftDataSource{
+    if (!_giftDataSource) {
+        _giftDataSource = @[
+                @{
+                        @"name": @"棒棒糖",
+                        @"rewardMsg": @"送出棒棒糖",
+                        @"personSort": @"0",
+                        @"goldCount": @"6",
+                        @"type": @"0",
+                        @"picUrl": @"gift_sugar",
+                },
+                @{
+                        @"name": @"生日蛋糕",
+                        @"rewardMsg": @"献上生日蛋糕",
+                        @"personSort": @"0",
+                        @"goldCount": @"66",
+                        @"type": @"1",
+                        @"picUrl": @"gift_cake",
+                },
+                @{
+                        @"name": @"钻戒",
+                        @"rewardMsg": @"送出钻戒",
+                        @"personSort": @"0",
+                        @"goldCount": @"1314",
+                        @"type": @"2",
+                        @"picUrl": @"gift_ring",
+                },
+                @{
+                        @"name": @"跑车",
+                        @"rewardMsg": @"送出跑车",
+                        @"personSort": @"0",
+                        @"goldCount": @"6666",
+                        @"type": @"3",
+                        @"picUrl": @"gift_car",
+                },
+                @{
+                        @"name": @"豪华游艇",
+                        @"rewardMsg": @"送出豪华游艇",
+                        @"personSort": @"0",
+                        @"goldCount": @"13140",
+                        @"type": @"4",
+                        @"picUrl": @"gift_ship"
+                },
+                @{
+                        @"name": @"火箭",
+                        @"rewardMsg": @"送出火箭",
+                        @"personSort": @"0",
+                        @"goldCount": @"66666",
+                        @"type": @"5",
+                        @"picUrl": @"gift_racket"
+                },
+        ];
+    }
+    return _giftDataSource;
+}
+
 - (void)initUI:(BOOL)linkmic {
     //close VC
     _closeBtn = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -91,7 +333,7 @@
     [self addSubview:_closeBtn];
     
     //topview,展示主播头像，在线人数及点赞
-    int statusBarHeight = [[UIApplication sharedApplication] statusBarFrame].size.height;
+    CGFloat statusBarHeight = [[UIApplication sharedApplication] statusBarFrame].size.height;
     _topView = [[TCShowLiveTopView alloc] initWithFrame:CGRectMake(5, statusBarHeight + 5, 110, 35) isHost:NO hostNickName:_liveInfo.userinfo.nickname
                                           audienceCount:_liveInfo.viewercount likeCount:_liveInfo.likecount hostFaceUrl:_liveInfo.userinfo.headpic];
     
@@ -320,6 +562,143 @@
     }
 }
 
+
+-(void)sendGift: (NSString *)Type number:(NSInteger)Number {
+    TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+    NSString *msg = [NSString stringWithFormat:@"%@,%@", Type, @(Number)];
+    [_msgHandler sendGiftMessage:profile.identifier nickName:profile.nickName headPic:profile.faceURL msg:msg];
+}
+
+- (void)clickGift {
+    canEditMsg = NO;
+    [UIView animateWithDuration:0.3f animations:^{
+        _giftPickerView.frame = CGRectMake(0, self.bounds.size.height-_pickerViewHeight, self.bounds.size.width, _pickerViewHeight);
+        _closeBtn.hidden = YES;
+        _btnRecord.hidden = YES;  //礼物
+        _btnShare.hidden = YES;
+        _btnChat.hidden = YES;
+    }];
+}
+
+- (void)closeGiftPickerView {
+    if (!keyboardShown) {
+        [UIView animateWithDuration:0.3f animations:^{
+            _giftPickerView.frame = CGRectMake(0, self.bounds.size.height, self.bounds.size.width, _pickerViewHeight);
+        } completion:^(BOOL finished) {
+            if (finished) {
+                _closeBtn.hidden = NO;
+                _btnRecord.hidden = NO; //礼物
+                _btnShare.hidden = NO;
+                _btnChat.hidden = NO;
+                canEditMsg = YES;
+            }
+        }];
+    }
+    [self hideKeyBoard];
+}
+
+- (void)hideKeyBoard {
+    keyboardShown = NO;
+    [giftNumberInput resignFirstResponder];
+    [_msgInputFeild resignFirstResponder];
+}
+
+- (void)keyboardDidShow:(NSNotification *)note {
+    keyboardShown = YES;
+}
+
+- (void)onClickSend:(NSString *)giftName andCount:(NSInteger)number {
+    NSLog(@"send gift name: %@, number: %d", giftName, number);
+    [self sendGift:giftName number:number];
+    LiveGiftShowModel *model = [LiveGiftShowModel giftModel:self.giftArr[(NSUInteger) _giftPickerView.pickedIndex] userModel:self.userModel];
+    model.toNumber = (NSUInteger) number;
+    [self.customGiftShow animatedWithGiftModel:model];
+    [self giftAnimate:giftName];
+}
+
+- (void)giftNumberChanged:(UITextField *)textField{
+    NSInteger current = [textField.text intValue];
+    if (current > 99) {
+        current = 99;
+    }
+    textField.text = [NSString stringWithFormat:@"%d", current];
+}
+
+- (void)giftAnimate: (NSString *)giftName {
+    CGFloat width = self.bounds.size.width;
+    CGFloat height = self.bounds.size.height;
+    NSString *giftPicName = @"";
+    if ([giftName isEqualToString:@"火箭"]) {
+        giftPicName = @"gift_racket_vertical";
+        UIImageView *imgView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:giftPicName]];
+        imgView.frame = CGRectMake(width/2 - 85/2, height, 85, 250);
+        [self addSubview:imgView];
+        CAKeyframeAnimation *animation = [CAKeyframeAnimation animationWithKeyPath:@"position"];
+        animation.values = @[[NSValue valueWithCGPoint:CGPointMake(width/2, height + 250/2)],
+                [NSValue valueWithCGPoint:CGPointMake(width/2, height - 250)],
+                [NSValue valueWithCGPoint:CGPointMake(width/2, -250)]];
+        animation.keyTimes = @[@0, @0.3, @1.0];
+        animation.duration = 2;
+        animation.removedOnCompletion = NO;
+        animation.fillMode = kCAFillModeForwards;
+        animation.rotationMode = kCAAnimationRotateAuto;
+        [imgView.layer addAnimation:animation forKey:@"keyframe"];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)2*NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+            [imgView removeFromSuperview];
+        });
+
+    } else if ([giftName isEqualToString:@"豪华游艇"]) {
+        giftPicName = @"gift_ship";
+
+        UIImageView *imgView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:giftPicName]];
+        imgView.frame = CGRectMake(-300, height/2 - 82, 300, 164);
+        imgView.transform = CGAffineTransformScale(imgView.transform, 0.8f, 0.8f);
+        [self addSubview:imgView];
+
+        CABasicAnimation *animationMove = [CABasicAnimation animationWithKeyPath:@"position"];
+        animationMove.toValue = [NSValue valueWithCGPoint:CGPointMake(width+150, height/2)];
+        animationMove.duration = 1.5;
+        animationMove.removedOnCompletion = NO;
+        animationMove.fillMode = kCAFillModeForwards;
+
+        [imgView.layer addAnimation:animationMove forKey:@"ship"];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)2*NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+            [imgView removeFromSuperview];
+        });
+
+    } else if ([giftName isEqualToString:@"跑车"]) {
+        giftPicName = @"gift_car";
+
+        UIImageView *imgView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:giftPicName]];
+        imgView.frame = CGRectMake(-300, height/2 - 60, 300, 120);
+        [self addSubview:imgView];
+
+        CABasicAnimation *animationMove = [CABasicAnimation animationWithKeyPath:@"position"];
+        animationMove.toValue = [NSValue valueWithCGPoint:CGPointMake(width+150, height/2)];
+        animationMove.duration = 1.2;
+        animationMove.removedOnCompletion = NO;
+        animationMove.fillMode = kCAFillModeForwards;
+
+        CABasicAnimation *animationScale = [CABasicAnimation animationWithKeyPath:@"transform.scale"];
+        animationScale.fromValue = @0.3;
+        animationScale.toValue = @1.0;
+        animationScale.duration = 1.2;
+        animationScale.autoreverses = NO;
+
+        CAAnimationGroup *group = [CAAnimationGroup animation];
+        group.duration = 1.2;
+        group.fillMode = kCAFillModeForwards;
+        group.removedOnCompletion = NO;
+        group.animations = @[animationMove, animationScale];
+
+        [imgView.layer addAnimation:group forKey:@"car"];
+        dispatch_after(dispatch_time(DISPATCH_TIME_NOW, (int64_t)1.5*NSEC_PER_SEC), dispatch_get_main_queue(), ^{
+            [imgView removeFromSuperview];
+        });
+    }
+
+}
+
 -(void)bulletMsg:(TCMsgModel *)msgModel{
     [_msgTableView bulletNewMsg:msgModel];
     if (msgModel.msgType == TCMsgModelType_DanmaMsg) {
@@ -496,15 +875,30 @@
 -(void)keyboardFrameDidChange:(NSNotification*)notice
 {
     NSDictionary * userInfo = notice.userInfo;
-    NSValue * endFrameValue = [userInfo objectForKey:UIKeyboardFrameEndUserInfoKey];
+    NSValue * endFrameValue = userInfo[UIKeyboardFrameEndUserInfoKey];
     CGRect endFrame = endFrameValue.CGRectValue;
-    [UIView animateWithDuration:0.25 animations:^{
-        if (endFrame.origin.y == self.height) {
-            _msgInputView.y =  endFrame.origin.y;
-        }else{
-            _msgInputView.y =  endFrame.origin.y - _msgInputView.height;
-        }
-    }];
+    if (canEditMsg) {
+        [UIView animateWithDuration:0.25 animations:^{
+            if (endFrame.origin.y == self.height) {
+                _msgInputView.y =  endFrame.origin.y;
+            }else{
+                _msgInputView.y =  endFrame.origin.y - _msgInputView.height;
+            }
+        }];
+    } else {
+        CGFloat frameY = [userInfo[UIKeyboardFrameEndUserInfoKey] CGRectValue].origin.y;
+
+        CGFloat duration = [userInfo[UIKeyboardAnimationDurationUserInfoKey] floatValue];
+
+        NSNumber *curve = userInfo[UIKeyboardAnimationCurveUserInfoKey];
+        CGFloat screenHeight = [UIScreen mainScreen].bounds.size.height;
+
+        [UIView animateWithDuration:duration animations:^{
+            [UIView setAnimationBeginsFromCurrentState:YES];
+            [UIView setAnimationCurve:(UIViewAnimationCurve) [curve intValue]];
+            _giftPickerView.bottomView.frame = CGRectMake(0, bottomViewY - (screenHeight-frameY), [UIScreen mainScreen].bounds.size.width, _giftPickerView.bottomView.frame.size.height);
+        }];
+    }
 }
 
 // 监听登出消息
@@ -630,6 +1024,42 @@
             msgModel.msgType = TCMsgModelType_DanmaMsg;
             
             [self bulletMsg:msgModel];
+            break;
+        }
+
+        //todo: add gift message handle  "棒棒糖","生日蛋糕","钻戒","跑车","豪华游艇","火箭"
+        // 礼物消息格式 "类型,数量"
+        case AVIMCMD_Custom_Gift: {
+            NSArray *giftArray = [msgText componentsSeparatedByString:@","];
+            NSString *giftName = [giftArray[0]
+                    stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]];
+            NSInteger giftNumber = [[giftArray[1]
+                    stringByTrimmingCharactersInSet:[NSCharacterSet whitespaceCharacterSet]]
+                    intValue];
+            NSLog(@"received gift: %@, number: %d", giftName, giftNumber);
+            NSUInteger index = 0;
+            if ([giftName equalsString:@"棒棒糖"]) {
+                index = 0;
+            } else if ([giftName equalsString:@"生日蛋糕"]) {
+                index = 1;
+            } else if ([giftName equalsString:@"钻戒"]) {
+                index = 2;
+            } else if ([giftName equalsString:@"跑车"]) {
+                index = 3;
+            } else if ([giftName equalsString:@"豪华游艇"]) {
+                index = 4;
+            } else if ([giftName equalsString:@"火箭"]) {
+                index = 5;
+            }
+            LiveUserModel *user = [[LiveUserModel alloc] init];
+            user.name = info.imUserName;
+            user.iconUrl = info.imUserIconUrl;
+            LiveGiftShowModel *model = [LiveGiftShowModel giftModel:self.giftArr[index] userModel:user];
+            model.toNumber = (NSUInteger) giftNumber;
+            [self.customGiftShow animatedWithGiftModel:model];
+
+            [self giftAnimate:giftName];
+
             break;
         }
             

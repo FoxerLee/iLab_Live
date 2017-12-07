@@ -17,6 +17,8 @@ typedef NS_ENUM(NSInteger, AVIMCommand) {
     AVIMCMD_Custom_ExitLive      = 3, //用户推出直播
     AVIMCMD_Custom_Like          = 4, //点赞消息
     AVIMCMD_Custom_Danmaku       = 5, //弹幕消息
+
+    AVIMCMD_Custom_Gift          = 6, //礼物消息
 };
 
 
@@ -87,6 +89,9 @@ typedef NS_ENUM(NSInteger, AVIMCommand) {
 
 // 发送弹幕消息
 - (void)sendDanmakuMessage:(NSString *)userId nickName:(NSString *)nickName headPic:(NSString *)headPic msg:(NSString *)msg;
+
+// 发送礼物消息
+- (void)sendGiftMessage: (NSString *)userId nickName: (NSString *)nickName headPic:(NSString *)headPic msg:(NSString *)msg;
 
 // 向群成员发送自己进群消息
 - (void)sendEnterLiveRoomMessage:(NSString *)userId nickName:(NSString *)nickName headPic:(NSString *)headPic;

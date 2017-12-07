@@ -70,11 +70,7 @@ NSString *const kTCLivePlayError = @"kTCLivePlayError";
         _log_switch   = NO;
         _videoIsReady = videoIsReady;
         _liveInfo     = info;
-        if (_liveInfo.type == TCLiveListItemType_Live) {
-            _isLivePlay = YES;
-        }else{
-            _isLivePlay = NO;
-        }
+        _isLivePlay = _liveInfo.type == TCLiveListItemType_Live;
         
         if (_liveInfo.type == TCLiveListItemType_Record) {
             _rtmpUrl      = _liveInfo.hls_play_url;
@@ -254,7 +250,7 @@ NSString *const kTCLivePlayError = @"kTCLivePlayError";
     NSDictionary *info = notification.userInfo;
     AVAudioSessionInterruptionType type = [info[AVAudioSessionInterruptionTypeKey] unsignedIntegerValue];
     if (type == AVAudioSessionInterruptionTypeBegan) {
-        if (_appIsInterrupt == NO) {
+        if (!_appIsInterrupt) {
             if (_playType == PLAY_TYPE_VOD_FLV || _playType == PLAY_TYPE_VOD_HLS || _playType == PLAY_TYPE_VOD_MP4) {
                 if (!_videoPause) {
                     [_txLivePlayer pause];
@@ -265,7 +261,7 @@ NSString *const kTCLivePlayError = @"kTCLivePlayError";
     }else{
         AVAudioSessionInterruptionOptions options = [info[AVAudioSessionInterruptionOptionKey] unsignedIntegerValue];
         if (options == AVAudioSessionInterruptionOptionShouldResume) {
-            if (_appIsInterrupt == YES) {
+            if (_appIsInterrupt) {
                 if (_playType == PLAY_TYPE_VOD_FLV || _playType == PLAY_TYPE_VOD_HLS || _playType == PLAY_TYPE_VOD_MP4) {
                     if (!_videoPause) {
                         [_txLivePlayer resume];
@@ -278,7 +274,7 @@ NSString *const kTCLivePlayError = @"kTCLivePlayError";
 }
 
 - (void)onAppDidEnterBackGround:(UIApplication*)app {
-    if (_appIsInterrupt == NO) {
+    if (!_appIsInterrupt) {
         if (_playType == PLAY_TYPE_VOD_FLV || _playType == PLAY_TYPE_VOD_HLS || _playType == PLAY_TYPE_VOD_MP4) {
             if (!_videoPause) {
                 [_txLivePlayer pause];
@@ -289,7 +285,7 @@ NSString *const kTCLivePlayError = @"kTCLivePlayError";
 }
 
 - (void)onAppWillEnterForeground:(UIApplication*)app {
-    if (_appIsInterrupt == YES) {
+    if (_appIsInterrupt) {
         if (_playType == PLAY_TYPE_VOD_FLV || _playType == PLAY_TYPE_VOD_HLS || _playType == PLAY_TYPE_VOD_MP4) {
             if (!_videoPause) {
                 [_txLivePlayer resume];
@@ -480,7 +476,7 @@ NSString *const kTCLivePlayError = @"kTCLivePlayError";
 }
 
 - (void)clickLog:(UIButton*)btn {
-    if (_log_switch == YES)
+    if (_log_switch)
     {
         _logicView.statusView.hidden = YES;
         _logicView.logViewEvt.hidden = YES;
@@ -785,7 +781,8 @@ NSString *const kTCLivePlayError = @"kTCLivePlayError";
 - (void)clickShare:(UIButton *)button {
     __weak typeof(self) weakSelf = self;
     //显示分享面板
-    [UMSocialUIManager showShareMenuViewInView:nil sharePlatformSelectionBlock:^(UMSocialShareSelectionView *shareSelectionView, NSIndexPath *indexPath, UMSocialPlatformType platformType) {
+    [UMSocialUIManager showShareMenuViewInView:nil sharePlatformSelectionBlock:
+            ^(UMSocialShareSelectionView *shareSelectionView, NSIndexPath *indexPath, UMSocialPlatformType platformType) {
         //        [weakSelf disMissShareMenuView];
         [weakSelf shareDataWithPlatform:platformType];
         

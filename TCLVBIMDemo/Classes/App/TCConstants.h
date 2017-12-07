@@ -22,7 +22,7 @@
 #define kTCCOSBucket                         @"xiaozhibo"
 //COS服务配置的机房区域，从COS的管理控制台https://console.qcloud.com/cos4/bucket进入Bucket列表后，选择您所创建的Bucket->基础配置->所属地区，查到所属地区后，根据如下
 //对应关系填入，如是“华南”请填写"gz"，“华北”请填写"tj"，“华东”请填写"sh"
-#define kTCCOSRegion                         @"gz"
+#define kTCCOSRegion                         @"tj"
 
 //云API服务密钥，在https://console.qcloud.com/capi查看，用于UGC短视频上传并落地到点播系统。已经废弃，不用填写。
 #define kTCCloudAPISecretId                  @""

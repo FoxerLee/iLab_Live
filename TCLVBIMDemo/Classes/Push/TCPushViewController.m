@@ -286,6 +286,8 @@
     if (_rtmpUrl.length == 0) {
         _rtmpUrl = RTMP_PUBLISH_URL;
     }
+
+    NSLog(@"rtmp推流地址: %@",_rtmpUrl);
     
     if (!([_rtmpUrl hasPrefix:@"rtmp://"] )) {
         [self toastTip:@"推流地址不合法，目前支持rtmp推流!"];
@@ -552,9 +554,11 @@
 -(void) clickCamera:(UIButton*) btn
 {
     _camera_switch = !_camera_switch;
-#if POD_PITU
+//#if POD_PITU
+//    [_txLivePublisher setMirror:!_camera_switch];
+//#endif
+    // fix bug :主摄像头图像镜像的问题
     [_txLivePublisher setMirror:!_camera_switch];
-#endif
     [_txLivePublisher switchCamera];
 }
 

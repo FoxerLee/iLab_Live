@@ -10,6 +10,7 @@
 #import "TCMsgModel.h"
 #import "TCMsgHandler.h"
 #import "TCMsgListTableView.h"
+#import "TCLiveGiftPickerView.h"
 
 @protocol TCPlayDecorateDelegate <NSObject>
 -(void)closeVC:(BOOL)popViewController;
@@ -28,7 +29,8 @@
 /**
  *  播放模块逻辑view，里面展示了消息列表，弹幕动画，观众列表等UI，其中与SDK的逻辑交互需要交给主控制器处理
  */
-@interface TCPlayDecorateView : UIView<UITextFieldDelegate, UIAlertViewDelegate, AVIMMsgListener, TIMGroupAssistantListener, TCAudienceListDelegate>
+@interface TCPlayDecorateView : UIView<UITextFieldDelegate, UIAlertViewDelegate,
+        AVIMMsgListener, TIMGroupAssistantListener, TCAudienceListDelegate, TCLiveGiftPickerViewDelegate>
 
 @property(nonatomic,weak) id<TCPlayDecorateDelegate>delegate;
 @property(nonatomic,retain)  UILabel            *playDuration;
