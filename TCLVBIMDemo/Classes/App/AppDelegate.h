@@ -7,6 +7,10 @@
 //
 
 #import <UIKit/UIKit.h>
+#import <AVOSCloud/AVOSCloud.h>
+#import <AVOSCloudIM/AVOSCloudIM.h>
+
+
 #define hasEnteredXiaoZhiBo @"_hasEnteredXiaoZhiBo_"
 
 @interface AppDelegate : TCBaseAppDelegate

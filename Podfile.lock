@@ -14,6 +14,16 @@ PODS:
   - AFNetworking/Serialization (3.1.0)
   - AFNetworking/UIKit (3.1.0):
     - AFNetworking/NSURLSession
+  - AVOSCloud (6.1.1)
+  - AVOSCloudIM (6.1.1):
+    - AVOSCloud (= 6.1.1)
+    - AVOSCloudIM/_ARC (= 6.1.1)
+    - AVOSCloudIM/_NOARC (= 6.1.1)
+  - AVOSCloudIM/_ARC (6.1.1):
+    - AVOSCloud (= 6.1.1)
+    - AVOSCloudIM/_NOARC (= 6.1.1)
+  - AVOSCloudIM/_NOARC (6.1.1):
+    - AVOSCloud (= 6.1.1)
   - BlocksKit (2.2.5):
     - BlocksKit/All (= 2.2.5)
   - BlocksKit/All (2.2.5):
@@ -42,6 +52,8 @@ PODS:
 
 DEPENDENCIES:
   - AFNetworking (~> 3.1.0)
+  - AVOSCloud
+  - AVOSCloudIM
   - BlocksKit (~> 2.2.5)
   - CWStatusBarNotification (~> 2.3.5)
   - Masonry (~> 1.0.1)
@@ -54,6 +66,8 @@ DEPENDENCIES:
 
 SPEC CHECKSUMS:
   AFNetworking: 5e0e199f73d8626b11e79750991f5d173d1f8b67
+  AVOSCloud: a21318994cd97adaf9bf19cf0ac38187b3d94f00
+  AVOSCloudIM: 5ac1d53078cfd81e193e1eb6a365842d96ad3009
   BlocksKit: 7f422b971407001178d181a43b99014ea2591fe6
   CWStatusBarNotification: 3d2738b25c3207f60cc50201388d3c96182545ff
   Masonry: 7c429b56da9d4ee0bbb3ed77a5ea710d6a5df39e
@@ -64,6 +78,6 @@ SPEC CHECKSUMS:
   SDWebImage: 098e97e6176540799c27e804c96653ee0833d13c
   ZipArchive: e25a4373192673e3229ac8d6e9f64a3e5713c966
 
-PODFILE CHECKSUM: e81c65b39651ca4155f278a4a7e40d14b695b9fe
+PODFILE CHECKSUM: 73f7934aa022c9ed242040c99581f95cf9ca2406
 
-COCOAPODS: 1.1.1
+COCOAPODS: 1.2.1
