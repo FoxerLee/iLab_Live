@@ -7,6 +7,7 @@
 //
 
 #import <UIKit/UIKit.h>
+typedef void(^Complete)();
 
 @interface TCSubscribeViewController: UIViewController<UITableViewDelegate, UITableViewDataSource>
 
@@ -14,5 +15,6 @@
 
 @property (strong, nonatomic) NSMutableArray *subscriptionArry;
 
+@property (copy, nonatomic) Complete complete;
 
 @end

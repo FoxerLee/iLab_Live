@@ -16,6 +16,7 @@
 #import "TCUserAgreementController.h"
 #import <UMSocialCore/UMSocialCore.h>
 
+
 @interface AppDelegate ()
 {
 }
@@ -55,7 +56,9 @@
     
     //设置新浪的appId和appKey
     [[UMSocialManager defaultManager] setPlaform:UMSocialPlatformType_Sina appKey:kSina_WeiBo_Share_ID  appSecret:kSina_WeiBo_Share_Secrect redirectURL:@"http://sns.whalecloud.com/sina2/callback"];
-
+    
+    //Leancloud
+    [AVOSCloud setApplicationId:@"pNvEiYq6xjQ18RF9PzsT9kcF-gzGzoHsz" clientKey:@"xxBl8bJGbfrNhSuOlyXgKcbP"];
     
     return YES;
 }
