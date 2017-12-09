@@ -106,9 +106,6 @@
     [query whereKey:@"follower" equalTo:followerID];
     
     [query findObjectsInBackgroundWithBlock:^(NSArray *objects, NSError *error){
-        AVObject *sub = objects[0];
-        
-        NSString* upID = sub[@"up"];
         
         for(AVObject *avObject in objects){
             
