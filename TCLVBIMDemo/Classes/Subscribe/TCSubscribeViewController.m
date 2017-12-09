@@ -10,28 +10,39 @@
 #import "TCSubscribeTableViewCell.h"
 #import "TCSubscribeModel.h"
 #import "TCSubscribeFrame.h"
+#import "TCUserInfoModel.h"
+
 
 @interface TCSubscribeViewController (){
     NSMutableArray *_subFrames;
 }
-
 @end
 
+
+
 @implementation TCSubscribeViewController
+
+
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
     
+     _subFrames = [NSMutableArray array];
+    
+    //获取当前登录账户信息
+    TCUserInfoData *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+    NSString* followID = profile.identifier;
+    
+    //用于存储被订阅者id
+     NSMutableArray* upIDs = [NSMutableArray array];
     
     
-    _subFrames = [NSMutableArray array];
     
-    _subscriptionArry = [NSArray arrayWithContentsOfFile:[[NSBundle mainBundle] pathForResource:@"data.plist" ofType:nil]];
+    _subscriptionArry = [NSMutableArray array];
     
     [self initData];
-    
-    
+
     _dataTable = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, 320, 600) style:UITableViewStylePlain];
     
     
@@ -42,6 +53,42 @@
     
     [self.view addSubview:_dataTable];
     
+    
+    NSOperationQueue *queue = [[NSOperationQueue alloc] init];
+    queue.maxConcurrentOperationCount = 1;
+
+    //请求1 获取被订阅者ID
+    NSBlockOperation *a = [NSBlockOperation blockOperationWithBlock:^{
+       dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+        [self getUpIDs:followID :upIDs :semaphore];
+        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+        
+    }];
+
+    //请求二 根据被订阅者ID查询被订阅信息
+    NSBlockOperation *b = [NSBlockOperation blockOperationWithBlock:^{
+        dispatch_semaphore_t sema = dispatch_semaphore_create(-upIDs.count+1);
+        [self getUpInfos:upIDs :_subscriptionArry :sema];
+        dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+    }];
+    
+    //请求三更新UI
+    NSBlockOperation *c = [NSBlockOperation blockOperationWithBlock:^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self initData];
+            [self.dataTable reloadData];
+        });
+    }];
+    
+    //添加依赖与添加到队列中
+    [b addDependency:a];
+    [c addDependency:b];
+    [queue addOperation:a];
+    [queue addOperation:b];
+    [queue addOperation:c];
+    
+    
+    
 }
 
 - (void)didReceiveMemoryWarning {
@@ -49,8 +96,63 @@
     // Dispose of any resources that can be recreated.
 }
 
-- (void)initData{
+
+//获取被订阅者的ID
+- (void)getUpIDs: (NSString *)followerID: (NSMutableArray*  ) upIDs :(dispatch_semaphore_t ) semaphore {
     
+    AVQuery *query = [AVQuery queryWithClassName:@"subscription"];
+    
+    
+    [query whereKey:@"follower" equalTo:followerID];
+    
+    [query findObjectsInBackgroundWithBlock:^(NSArray *objects, NSError *error){
+        
+        for(AVObject *avObject in objects){
+            
+            NSString* upID = avObject[@"up"];
+            
+            [upIDs addObject:upID];
+            
+        }
+        
+        dispatch_semaphore_signal(semaphore);
+        
+    }];
+    
+}
+
+//获取被订阅信息
+- (void)getUpInfos: (NSMutableArray *)upIDs :(NSMutableArray *)up_infos:(dispatch_semaphore_t ) semaphore  {
+    AVQuery *query = [AVQuery queryWithClassName: @"up_info"];
+    
+    for(NSString* upID in upIDs){
+        @synchronized(self){
+            [query whereKey:@"up_id" equalTo:upID];
+            [query getFirstObjectInBackgroundWithBlock:^(AVObject *object, NSError *error){
+                NSString* upName = object[@"up_name"];
+                NSString* photoURL = object[@"up_photo"];
+                NSString* upRoomName = object[@"room_name"];
+                NSString* roomCover = object[@"room_cover"];
+                
+                NSDictionary* upInfo = [NSDictionary dictionaryWithObjectsAndKeys:
+                                        upName,@"name",
+                                        photoURL,@"imgUrl",
+                                        upRoomName,@"title",
+                                        roomCover,@"roomUrl", nil];
+                [up_infos addObject:upInfo];
+                NSLog(up_infos[0][@"title"]);
+                dispatch_semaphore_signal(semaphore);
+            }];
+        }
+        
+        
+    }
+    
+    
+}
+
+
+- (void)initData{
     
     for(NSDictionary *dict in _subscriptionArry){
         TCSubscribeFrame *sFrame = [[TCSubscribeFrame alloc]init];
@@ -58,7 +160,6 @@
 
         [_subFrames addObject:sFrame];
     }
-    
     
 }
 
@@ -73,7 +174,6 @@
     
     if (cell == nil){
         cell = [[TCSubscribeTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:[TCSubscribeTableViewCell getID]];
-        
     }
     
     
