@@ -182,7 +182,7 @@
     
     cell.subFrame = _subFrames[indexPath.row];
     
-    
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
     return cell;
 }
 

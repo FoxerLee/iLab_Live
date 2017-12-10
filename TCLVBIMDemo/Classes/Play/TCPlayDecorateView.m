@@ -23,6 +23,7 @@
 #import "LiveGiftShowCustom.h"
 #import "MJExtension.h"
 #import "NSString+Common.h"
+#import "LCManager.h"
 
 @interface TCPlayDecorateView()
 
@@ -53,11 +54,13 @@
 
     // add
     TCLiveGiftPickerView *_giftPickerView;
-    CGFloat _pickerViewHeight;
-    UITextField *giftNumberInput;
-    BOOL keyboardShown;
-    BOOL canEditMsg;
-    CGFloat bottomViewY;
+    CGFloat              _pickerViewHeight;
+    UITextField          *giftNumberInput;
+    BOOL                 keyboardShown;
+    BOOL                 canEditMsg;
+    CGFloat              bottomViewY;
+    UIButton             *_subButton;
+    BOOL                 isSubscribe;
 
 }
 
@@ -123,12 +126,14 @@
 
     [self addSubview:_topView];
 
+    [self initSubButton];
+
     int   icon_size = BOTTOM_BTN_ICON_WIDTH;
     float startSpace = 15;
     float icon_center_y = self.height - icon_size/2 - startSpace;
 
     if (_liveInfo.type == TCLiveListItemType_Live) {  // 直播
-        float icon_count = 8;                         // 没有连麦 todo: 调整
+        float icon_count = 8;                         // 没有连麦
         float icon_center_interval = (self.width - 2*startSpace - icon_size)/(icon_count - 1);
         float first_icon_center_x = startSpace + icon_size/2;
         // 发弹幕
@@ -239,6 +244,44 @@
         tap.numberOfTapsRequired = 1;
         self.userInteractionEnabled = YES;
         [self addGestureRecognizer:tap];
+    }
+}
+
+#pragma mark - 订阅相关
+
+- (void) initSubButton {
+    TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+    isSubscribe = [LCManager ifUser:profile.identifier followUp:_liveInfo.userid];
+
+    CGFloat buttonWidth = 60;
+    CGFloat buttonHeight = 30;
+    _subButton = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    _subButton.frame = CGRectMake(_topView.frame.origin.x, CGRectGetMaxY(_topView.frame) + 5, buttonWidth, buttonHeight);
+    _subButton.layer.cornerRadius = buttonHeight/2;
+    _subButton.backgroundColor = RGBA(120, 230, 220, 0.7);
+    _subButton.tintColor = [UIColor whiteColor];
+    _subButton.titleLabel.font = [UIFont systemFontOfSize:13];
+    if (isSubscribe) {
+        [_subButton setTitle:@"取消订阅" forState:UIControlStateNormal];
+    } else {
+        [_subButton setTitle:@"订阅" forState:UIControlStateNormal];
+    }
+    [_subButton addTarget:self action:@selector(changeSubscribeState:) forControlEvents:UIControlEventTouchUpInside];
+    [self addSubview:_subButton];
+}
+
+- (void)changeSubscribeState:(UIButton *)sender {
+    TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+    if (isSubscribe) {
+        if ([LCManager cancelUser:profile.identifier followUp:_liveInfo.userid] ) {
+            [_subButton setTitle:@"订阅" forState:UIControlStateNormal];
+            isSubscribe = NO;
+        }
+    } else {
+        if ([LCManager addUser:profile.identifier followUp:_liveInfo.userid]) {
+            [_subButton setTitle:@"取消订阅" forState:UIControlStateNormal];
+            isSubscribe = YES;
+        }
     }
 }
 

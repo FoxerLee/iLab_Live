@@ -3,7 +3,7 @@
 <plist version="1.0">
 <dict>
 	<key>CFBundleDevelopmentRegion</key>
-	<string>zh_CN</string>
+	<string>cn</string>
 	<key>CFBundleDisplayName</key>
 	<string>小直播</string>
 	<key>CFBundleExecutable</key>

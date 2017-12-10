@@ -23,7 +23,7 @@
 
 
 @interface TCLiveListViewController ()<UICollectionViewDelegate,UICollectionViewDataSource,
-        UITableViewDataSource, UITableViewDelegate, TCLiveGroupCellDelegate>
+        UITableViewDataSource, UITableViewDelegate, TCLiveGroupCellDelegate, UITextFieldDelegate>
 
 @property TCLiveListMgr *liveListMgr;
 
@@ -57,6 +57,7 @@
     CGFloat          scrollViewWidth;
     CGFloat          scrollViewHeight;
 }
+
 
 - (instancetype)init {
     self = [super init];
@@ -145,10 +146,11 @@
     _searchInput.enablesReturnKeyAutomatically = YES;
     _searchInput.returnKeyType = UIReturnKeySearch;
 //    _searchInput.clearButtonMode = UITextFieldViewModeWhileEditing;
+    _searchInput.delegate = self;
     [_searchView addSubview:_searchInput];
 
     UIButton *cancelBtn = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-    [cancelBtn setTintColor:RGB(240, 240, 240)];
+    [cancelBtn setTintColor:RGB(250, 250, 250)];
     [cancelBtn setTitle:@"取消" forState:UIControlStateNormal];
     cancelBtn.frame = CGRectMake(CGRectGetMaxX(searchBar.frame), 5, 50, 40);
     [cancelBtn addTarget:self action:@selector(hideKeyboard) forControlEvents:UIControlEventTouchUpInside];
@@ -176,6 +178,44 @@
     //设置成NO表示当前控件响应后会传播到其他控件上，默认为YES。
     tapGestureRecognizer.cancelsTouchesInView = NO;
     [self.view addGestureRecognizer:tapGestureRecognizer];
+}
+
+- (BOOL)textFieldShouldReturn:(UITextField *)textField {
+    if (_searchInput.text.length == 0) {
+        return NO;
+    } else {
+        [_searchInput resignFirstResponder];
+        [self enterSearchView];
+        return YES;
+    }
+
+}
+
+- (void)enterSearchView {
+    NSString *keyWord = _searchInput.text;
+    NSMutableArray *searchLives = [NSMutableArray array];
+
+    for (TCLiveInfo *live in _lives) {
+        if ([live.title containsString:keyWord] || [live.userinfo.nickname containsString:keyWord]) {
+            [searchLives addObject:live];
+        }
+    }
+
+    if (searchLives.count == 0) {
+        TCLiveUserInfo *fakeUser = [[TCLiveUserInfo alloc] init];
+        fakeUser.nickname = @"无主播";
+        TCLiveInfo *fakeLive = [[TCLiveInfo alloc] init];
+        fakeLive.userinfo = fakeUser;
+        fakeLive.title = @"暂无直播";
+        fakeLive.playurl = @"nolive";
+        [searchLives addObject:[fakeLive copy]];
+        [searchLives addObject:[fakeLive copy]];
+    }
+
+    TCLiveGroupInfo *group = [TCLiveGroupInfo initWithName:@"搜索结果" andType:LiveTypeGame andDetail:nil andLiveList:searchLives];
+
+    TCLiveGroupViewController *groupVC = [[TCLiveGroupViewController alloc] initWithGroupInfo:group];
+    [self.navigationController pushViewController:groupVC animated:YES];
 }
 
 
