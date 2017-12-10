@@ -18,121 +18,260 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
 #import "UIActionSheet+BlocksKit.h"
+//
+//  TCSubscribeViewController.m
+//  TCLVBIMDemo
+//
+//  Created by Ricardo on 2017/11/19.
+//  Copyright © 2017年 tencent. All rights reserved.
+//
 
-#define OPEN_CAMERA  0
-#define OPEN_PHOTO   1
+#import "TCSubscribeViewController.h"
+#import "TCSubscribeTableViewCell.h"
+#import "TCSubscribeModel.h"
+#import "TCSubscribeFrame.h"
+#import "TCUserInfoModel.h"
+
+
+@interface TCMyFollowViewController (){
+    NSMutableArray *_subFrames;
+    NSMutableArray* upIDs;
+}
+@end
+
+
 
 @implementation TCMyFollowViewController
 
-
-- (void)viewDidLoad
-{
+- (void)viewDidLoad {
     [super viewDidLoad];
-    UIColor *textColour = [UIColor colorWithRed:36/255.0 green:203/255.0 blue:173/255.0 alpha:1];
-    self.navigationController.navigationBar.tintColor    = textColour;
-    self.navigationItem.title = @"我的关注";
-    [self.navigationController.navigationBar setTitleTextAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:18],NSForegroundColorAttributeName:[UIColor blackColor]}] ;
+    // Do any additional setup after loading the view.
     
-    self.view.backgroundColor = RGB(0xF3,0xF3,0xF3);
+    _subFrames = [NSMutableArray array];
     
-//    __weak typeof(self) ws = self;
-//    TCUserInfoData  *_profile = [[TCUserInfoModel sharedInstance] getUserProfile ];
-//    TCUserInfoCellItem *faceItem = [[TCUserInfoCellItem alloc] initWith:@"头像" value:nil type:TCUserInfo_EditFace action:^(TCUserInfoCellItem *menu, TCEditUserInfoTableViewCell *cell) {
-//       nil; } ];
-//
-//    TCUserInfoCellItem *nickItem = [[TCUserInfoCellItem alloc] initWith:@"昵称" value:_profile.nickName type:TCUserInfo_EditNick action:^(TCUserInfoCellItem *menu, TCEditUserInfoTableViewCell *cell) {
-//        nil; }];
-//
-//    TCUserInfoCellItem *genderItem = [[TCUserInfoCellItem alloc] initWith:@"性别" value:(TIM_GENDER_MALE==_profile.gender?@"男":@"女") type:TCUserInfo_EditGender action:^(TCUserInfoCellItem *menu, TCEditUserInfoTableViewCell *cell) {
-//        [ws modifyUserInfoGender:menu cell:cell]; }];
-//
-//    _userInfoArry = [NSMutableArray arrayWithArray:@[faceItem, nickItem, genderItem]];
-//
-    NSInteger nHeighNavigationBar = self.navigationController.navigationBar.frame.size.height;
-    NSInteger nStatusBarFrame     =[[UIApplication sharedApplication] statusBarFrame].size.height;
-    CGRect tableViewFrame  = CGRectMake(0, nHeighNavigationBar+nStatusBarFrame+20, self.view.frame.size.width, 155);
-    _tableView    = [[UITableView alloc] initWithFrame:tableViewFrame style:UITableViewStylePlain];
-    _tableView.dataSource = self;
-    _tableView.delegate   = self;
-    [_tableView setSeparatorColor:RGB(0xD8,0xD8,0xD8)];
+    //用于存储被订阅者id
+    upIDs = [NSMutableArray array];
     
-    //设置tableView不能滚动
-    [self.tableView setScrollEnabled:NO];
+    _subscriptionArry = [NSMutableArray array];
     
-    //去掉多余的分割线
-    [self setExtraCellLineHidden:self.tableView];
-    [self.view addSubview:_tableView];
+    [self initData];
     
-    self.automaticallyAdjustsScrollViewInsets = NO;
-    // 点击空白处键盘消失
-    self.view.userInteractionEnabled = YES;
-    UITapGestureRecognizer *singleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(closeKeyboard:)];
-    singleTap.cancelsTouchesInView = NO;
-    [self.view addGestureRecognizer:singleTap];
-    return;
+    _dataTable = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, 340, 600) style:UITableViewStylePlain];
+    
+    
+    _dataTable.delegate = self;
+    _dataTable.dataSource = self;
+    
+    _dataTable.separatorStyle = UITableViewCellSeparatorStyleNone;
+    
+    [self.view addSubview:_dataTable];
+    
+    
+    //从leancloud端获取数据
+    //[self getUpInfoFromNetwork];
+    
+    
+}
+
+- (void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:true];
+    
+    [self getUpInfoFromNetwork];
+}
+- (void)viewWillDisappear:(BOOL)animated{
+    [super viewWillDisappear:true];
+    
+    [_subFrames removeAllObjects];
+    [upIDs removeAllObjects];
+    [_subscriptionArry removeAllObjects];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+- (void)getUpInfoFromNetwork{
+    //获取当前登录账户信息
+    TCUserInfoData *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+    NSString* followID = profile.identifier;
+    
+    NSOperationQueue *queue = [[NSOperationQueue alloc] init];
+    queue.maxConcurrentOperationCount = 1;
+    
+    //请求1 获取被订阅者ID
+    NSBlockOperation *a = [NSBlockOperation blockOperationWithBlock:^{
+        dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+        [self getUpIDs:followID :upIDs :semaphore];
+        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+        
+    }];
+    
+    //请求二 根据被订阅者ID查询被订阅信息
+    NSBlockOperation *b = [NSBlockOperation blockOperationWithBlock:^{
+        if (upIDs.count) {
+            dispatch_semaphore_t sema = dispatch_semaphore_create(0);
+            [self getUpInfos:upIDs :_subscriptionArry :sema];
+            dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+        }
+        
+    }];
+    
+    //请求三更新UI
+    NSBlockOperation *c = [NSBlockOperation blockOperationWithBlock:^{
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self initData];
+            [self.dataTable reloadData];
+        });
+    }];
+    
+    //添加依赖与添加到队列中
+    [b addDependency:a];
+    [c addDependency:b];
+    [queue addOperation:a];
+    [queue addOperation:b];
+    [queue addOperation:c];
 }
 
 
--(void)viewWillAppear:(BOOL)animated
-{
-    [super viewWillAppear:animated];
-    [self.navigationController setNavigationBarHidden:NO];
+//获取被订阅者的ID
+- (void)getUpIDs: (NSString *)followerID: (NSMutableArray*  ) upIDs :(dispatch_semaphore_t ) semaphore {
+    
+    AVQuery *query = [AVQuery queryWithClassName:@"subscription"];
+    
+    
+    [query whereKey:@"follower" equalTo:followerID];
+    
+    [query findObjectsInBackgroundWithBlock:^(NSArray *objects, NSError *error){
+        
+        for(AVObject *avObject in objects){
+            
+            NSString* upID = avObject[@"up"];
+            
+            [upIDs addObject:upID];
+            
+        }
+        
+        dispatch_semaphore_signal(semaphore);
+        
+    }];
+    
 }
-#pragma mark 绘制view
-/**
- *  用于去掉界面上多余的横线
- *
- *  @param tableView 无意义
- */
--(void)setExtraCellLineHidden: (UITableView *)tableView
-{
-    UIView *view = [UIView new];
-    view.backgroundColor = [UIColor clearColor];
-    [_tableView setTableFooterView:view];
+
+//获取被订阅信息
+- (void)getUpInfos: (NSMutableArray *)upIDs :(NSMutableArray *)up_infos:(dispatch_semaphore_t ) semaphore  {
+    AVQuery *query = [AVQuery queryWithClassName: @"up_info"];
+    dispatch_semaphore_signal(semaphore);
+    
+    for(NSString* upID in upIDs){
+        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
+        @synchronized(self){
+            [query whereKey:@"up_id" equalTo:upID];
+            //获取query不为空的话
+            if (query.countObjects) {
+                [query getFirstObjectInBackgroundWithBlock:^(AVObject *object, NSError *error){
+                    NSString* upName = object[@"up_name"];
+                    NSString* photoURL = object[@"up_photo"];
+                    NSString* upRoomName = object[@"room_name"];
+                    NSString* className = NULL;
+                    
+                    NSArray *tempArr = [upRoomName componentsSeparatedByString:@";;;"];
+                    
+                    if (tempArr.count) {
+                        upRoomName = tempArr[0];
+                        className = tempArr[1];
+                    }
+                    
+                    NSDictionary* upInfo = [NSDictionary dictionaryWithObjectsAndKeys:
+                                            upName,@"name",
+                                            photoURL,@"imgUrl",
+                                            upRoomName,@"title",
+                                            className,@"class", nil];
+                    [up_infos addObject:upInfo];
+                    dispatch_semaphore_signal(semaphore);
+                }];
+                
+            }
+            else{
+                dispatch_semaphore_signal(semaphore);
+            }
+        }
+        
+        
+    }
+    
+    
 }
-//获取需要绘制的cell数目
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
-{
-    return _userInfoArry.count;
+
+
+- (void)initData{
+    
+    for(NSDictionary *dict in _subscriptionArry){
+        TCSubscribeFrame *sFrame = [[TCSubscribeFrame alloc]init];
+        sFrame.subscription = [TCSubscribeModel subWithDict:dict];
+        [_subFrames addObject:sFrame];
+    }
+    
 }
-//获取需要绘制的cell高度
-- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    TCUserInfoCellItem *item = _userInfoArry[indexPath.row];
-    return [TCUserInfoCellItem heightOf:item];
+
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView{
+    return 1;
 }
-//绘制cell
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    TCEditUserInfoTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell"];
-    //    TCUserInfoCellItem *item = _userInfoArry[indexPath.row];
-    //    if (!cell)
-    //    {
-    //        cell = [[TCEditUserInfoTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cell"];
-    //        [cell initUserinfoViewCellData:item];
-    //    }
-    //
-    //    [cell drawRichCell:item delegate:self];
+
+-(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    
+    TCSubscribeTableViewCell* cell = [tableView dequeueReusableCellWithIdentifier:[TCSubscribeTableViewCell getID]];
+    
+    
+    if (cell == nil){
+        cell = [[TCSubscribeTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:[TCSubscribeTableViewCell getID]];
+    }
+    
+    
+    cell.subFrame = _subFrames[indexPath.row];
+    
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
     return cell;
 }
 
-
-/**
- *  用户点击tableview上的cell后,找到对应的回到函数并执行
- *
- *  @param tableView 对应的tableview
- *  @param indexPath 对应的cell索引
- */
--(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    //    TCUserInfoCellItem *item = _userInfoArry[indexPath.row];
-    //    UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
-    //    if (item.action)
-    //    {
-    //        item.action(item, cell);
-    //    }
-    //
-    //    [tableView deselectRowAtIndexPath:indexPath animated:NO];
+- (NSInteger)tableView:(nonnull UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    
+    return _subFrames.count;
 }
 
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
+    return [_subFrames[indexPath.row] cellHeight];
+}
+
+/*
+ #pragma mark - Navigation
+ 
+ // In a storyboard-based application, you will often want to do a little preparation before navigation
+ - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
+ // Get the new view controller using [segue destinationViewController].
+ // Pass the selected object to the new view controller.
+ }
+ */
+
+//- (void)encodeWithCoder:(nonnull NSCoder *)aCoder {
+//    <#code#>
+//}
+//
+//- (void)didUpdateFocusInContext:(nonnull UIFocusUpdateContext *)context withAnimationCoordinator:(nonnull UIFocusAnimationCoordinator *)coordinator {
+//    <#code#>
+//}
+//
+//- (void)setNeedsFocusUpdate {
+//    <#code#>
+//}
+//
+//- (BOOL)shouldUpdateFocusInContext:(nonnull UIFocusUpdateContext *)context {
+//    <#code#>
+//}
+//
+//- (void)updateFocusIfNeeded {
+//    <#code#>
+//}
+
 @end
+

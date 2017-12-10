@@ -18,11 +18,11 @@
  * 页面上只有一个tableview控件
  */
 
-@interface TCMyFollowViewController : UIViewController<UITableViewDelegate, UITableViewDataSource>
+@interface TCMyFollowViewController: UIViewController<UITableViewDelegate, UITableViewDataSource>
 
-@property (strong, nonatomic) UITableView      *tableView;
+@property (strong, nonatomic) UITableView *dataTable;
 
-@property (strong, nonatomic) NSMutableArray   *userInfoArry;
+@property (strong, nonatomic) NSMutableArray *subscriptionArry;
 
 @end
 
