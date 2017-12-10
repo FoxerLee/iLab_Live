@@ -20,6 +20,7 @@
 #import "TCLiveGroupCell.h"
 #import "TCLiveGroupViewController.h"
 #import "NSString+Common.h"
+#import "LCManager.h"
 
 
 @interface TCLiveListViewController ()<UICollectionViewDelegate,UICollectionViewDataSource,
@@ -80,6 +81,7 @@
 //    [self initMainUIOld];
 //    [self setup:VideoType_VOD_SevenDay];
 
+    [self initBasicBalance];
     [self initMainUI];
     [self setupGestures];
     [self setup: VideoType_LIVE_Online];
@@ -118,6 +120,14 @@
     [[NSNotificationCenter defaultCenter] removeObserver:self name:kTCLiveListNewDataAvailable object:nil];
     //[[NSNotificationCenter defaultCenter] removeObserver:self name:kTCLiveListUpdated object:nil];
     [[NSNotificationCenter defaultCenter] removeObserver:self name:kTCLiveListSvrError object:nil];
+}
+
+- (void)initBasicBalance {
+    TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+    NSInteger goldCount = [LCManager getUserBalanceById:profile.identifier];
+    if (goldCount < 0) {
+        [LCManager initUser:profile.identifier Balance:kInitBalance];
+    }
 }
 
 /**

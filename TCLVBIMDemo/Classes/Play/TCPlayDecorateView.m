@@ -229,7 +229,20 @@
         NSMutableArray *array = [@[giftSugar, giftCake, giftRing, giftCar, giftShip, giftRacket] mutableCopy];
         _giftPickerView = [[TCLiveGiftPickerView alloc] initWithFrame:CGRectMake(0, height, width, _pickerViewHeight)];
         _giftPickerView.giftModelList = array;
-        _giftPickerView.goldCount = 20000;
+
+        TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+        NSInteger goldCount = [LCManager getUserBalanceById:profile.identifier];
+        NSString *count;
+        if (goldCount >= 0) {
+            count = [NSString stringWithFormat:@"%d", goldCount];
+        } else {
+            if ([LCManager initUser:profile.identifier Balance:kInitBalance]) {
+                count = [NSString stringWithFormat:@"%d", kInitBalance];
+            } else {
+                count = [NSString stringWithFormat:@"%d", 0];
+            }
+        }
+        _giftPickerView.goldCount = [count intValue];
         _giftPickerView.pickedIndex = 0;
         _giftPickerView.delegate = self;
         [self addSubview:_giftPickerView];
@@ -651,6 +664,30 @@
 }
 
 - (void)onClickSend:(NSString *)giftName andCount:(NSInteger)number {
+    NSInteger price = 0;
+    for (NSDictionary *giftPrototype in _giftDataSource) {
+        if ([giftName isEqualToString:giftPrototype[@"name"]]) {
+            price = [giftPrototype[@"goldCount"] intValue];
+            break;
+        }
+    }
+    TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+    [LCManager decreaseUser:profile.identifier Balance:price*number result:^(BOOL succeeded, NSError *error) {
+        if (succeeded) {
+            [LCManager increaseUser:_liveInfo.userid Balance:price*number result:^(BOOL succeeded, NSError *error) {
+                if (succeeded) {
+                    [self handleGiftSend:giftName andCount:number];
+                }
+            }];
+        }
+    }];
+
+}
+
+- (void)handleGiftSend:(NSString *)giftName andCount:(NSInteger)number {
+    TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+    _giftPickerView.goldCount = [LCManager getUserBalanceById:profile.identifier];
+
     NSLog(@"send gift name: %@, number: %d", giftName, number);
     [self sendGift:giftName number:number];
     LiveGiftShowModel *model = [LiveGiftShowModel giftModel:self.giftArr[(NSUInteger) _giftPickerView.pickedIndex] userModel:self.userModel];

@@ -20,6 +20,8 @@
 
 // 获取一个用户的总资产，若用户不存在则返回-1
 + (NSInteger)getUserBalanceById:(NSString *)userId;
+// 初始化一个用户的总资产
++ (BOOL)initUser:(NSString *)userId Balance: (NSInteger) number;
 // 减少一个用户的总资产
 + (void)decreaseUser:(NSString *)userId Balance:(NSInteger)number result:(AVBooleanResultBlock)resultBlock;
 // 增加一个用户的总资产

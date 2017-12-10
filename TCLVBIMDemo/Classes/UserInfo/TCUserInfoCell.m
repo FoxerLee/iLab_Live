@@ -155,6 +155,11 @@
 //        case TCUserInfo_FollowAndFans:
         case TCUserInfo_FollowAndFans:
         {
+            for (UIView *view in self.subviews) {
+                if ([view isKindOfClass:UILabel.class]) {
+                    [view removeFromSuperview];
+                }
+            }
             UIView* bgview = [[UIView alloc] init];
             bgview.opaque = YES;
 //        bgview.backgroundColor = RGB(0xf3,0x2B,0x48);
@@ -163,6 +168,11 @@
         }
         case TCUserInfo_Balance:
         {
+            for (UIView *view in self.subviews) {
+                if ([view isKindOfClass:UILabel.class]) {
+                    [view removeFromSuperview];
+                }
+            }
             UIImageView *icon = [[UIImageView alloc] initWithFrame:CGRectMake(30, self.textLabel.frame.origin.y + 10, 25, 25)];
             [icon setImage:[UIImage imageNamed:@"balance.png"]];
             [self addSubview:icon];
@@ -174,10 +184,24 @@
             itemText.textColor     = [UIColor blackColor];
             itemText.font          = [UIFont systemFontOfSize:16];
             [self addSubview:itemText];
+
+            UILabel *countLabel = [[UILabel alloc] init];
+            countLabel.frame = CGRectMake(CGRectGetMaxX(itemText.frame) + 10, self.textLabel.frame.origin.y, 160, 45);
+            countLabel.textColor = [UIColor blackColor];
+            countLabel.font = [UIFont systemFontOfSize:16];
+            countLabel.text = item.value;
+            countLabel.textAlignment = NSTextAlignmentRight;
+            [self addSubview:countLabel];
+
         }
         break;
         case TCUserInfo_History:
         {
+            for (UIView *view in self.subviews) {
+                if ([view isKindOfClass:UILabel.class]) {
+                    [view removeFromSuperview];
+                }
+            }
             UIImageView *icon = [[UIImageView alloc] initWithFrame:CGRectMake(30, self.textLabel.frame.origin.y + 10, 25, 25)];
             [icon setImage:[UIImage imageNamed:@"viewHistory.png"]];
             [self addSubview:icon];
@@ -192,6 +216,11 @@
         break;
         case TCUserInfo_Edit:
         {
+            for (UIView *view in self.subviews) {
+                if ([view isKindOfClass:UILabel.class]) {
+                    [view removeFromSuperview];
+                }
+            }
             UIImageView *icon = [[UIImageView alloc] initWithFrame:CGRectMake(30, self.textLabel.frame.origin.y + 10, 25, 25)];
             [icon setImage:[UIImage imageNamed:@"setting.png"]];
             [self addSubview:icon];
@@ -207,6 +236,14 @@
         case TCUserInfo_About:
         case TCUserInfo_Authenticate:
         {
+            for (UIView *view in self.subviews) {
+                if ([view isKindOfClass:UILabel.class]) {
+                    [view removeFromSuperview];
+                }
+            }
+            for (UIView *view in self.subviews) {
+                [view removeFromSuperview];
+            }
             self.textLabel.text      = item.tip;
             self.textLabel.textColor = [UIColor blackColor];
             self.textLabel.font      = [UIFont systemFontOfSize:16];

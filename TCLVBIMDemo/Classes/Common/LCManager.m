@@ -69,6 +69,15 @@
     }
 }
 
++ (BOOL)initUser:(NSString *)userId Balance: (NSInteger) number {
+    AVObject *row = [AVObject objectWithClassName:@"user_balance"];
+
+    [row setObject:userId forKey:@"id"];
+    [row setObject:@(number) forKey:@"balance"];
+
+    return [row save];
+}
+
 + (void)decreaseUser:(NSString *)userId Balance:(NSInteger)number result:(AVBooleanResultBlock)resultBlock {
     [self modifyUser:userId Plus:NO Balance:number result:^(BOOL succeeded, NSError *error) {
         resultBlock(succeeded, error);
