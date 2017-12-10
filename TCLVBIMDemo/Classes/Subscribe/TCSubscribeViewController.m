@@ -15,6 +15,7 @@
 
 @interface TCSubscribeViewController (){
     NSMutableArray *_subFrames;
+    NSMutableArray* upIDs;
 }
 @end
 
@@ -22,22 +23,14 @@
 
 @implementation TCSubscribeViewController
 
-
-
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
     
      _subFrames = [NSMutableArray array];
     
-    //获取当前登录账户信息
-    TCUserInfoData *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
-    NSString* followID = profile.identifier;
-    
     //用于存储被订阅者id
-     NSMutableArray* upIDs = [NSMutableArray array];
-    
-    
+     upIDs = [NSMutableArray array];
     
     _subscriptionArry = [NSMutableArray array];
     
@@ -54,21 +47,50 @@
     [self.view addSubview:_dataTable];
     
     
+    //从leancloud端获取数据
+    //[self getUpInfoFromNetwork];
+    
+    
+}
+
+- (void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:true];
+    
+    [self getUpInfoFromNetwork];
+}
+- (void)viewWillDisappear:(BOOL)animated{
+    [super viewWillDisappear:true];
+    
+    [_subFrames removeAllObjects];
+    [upIDs removeAllObjects];
+    [_subscriptionArry removeAllObjects];
+}
+
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
+}
+
+- (void)getUpInfoFromNetwork{
+    //获取当前登录账户信息
+    TCUserInfoData *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+    NSString* followID = profile.identifier;
+    
     NSOperationQueue *queue = [[NSOperationQueue alloc] init];
     queue.maxConcurrentOperationCount = 1;
-
+    
     //请求1 获取被订阅者ID
     NSBlockOperation *a = [NSBlockOperation blockOperationWithBlock:^{
-       dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
+        dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
         [self getUpIDs:followID :upIDs :semaphore];
         dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
         
     }];
-
+    
     //请求二 根据被订阅者ID查询被订阅信息
     NSBlockOperation *b = [NSBlockOperation blockOperationWithBlock:^{
         if (upIDs.count) {
-            dispatch_semaphore_t sema = dispatch_semaphore_create(-upIDs.count+1);
+            dispatch_semaphore_t sema = dispatch_semaphore_create(0);
             [self getUpInfos:upIDs :_subscriptionArry :sema];
             dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
         }
@@ -89,14 +111,6 @@
     [queue addOperation:a];
     [queue addOperation:b];
     [queue addOperation:c];
-    
-    
-    
-}
-
-- (void)didReceiveMemoryWarning {
-    [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
 }
 
 
@@ -127,25 +141,40 @@
 //获取被订阅信息
 - (void)getUpInfos: (NSMutableArray *)upIDs :(NSMutableArray *)up_infos:(dispatch_semaphore_t ) semaphore  {
     AVQuery *query = [AVQuery queryWithClassName: @"up_info"];
+    dispatch_semaphore_signal(semaphore);
     
     for(NSString* upID in upIDs){
+        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
         @synchronized(self){
             [query whereKey:@"up_id" equalTo:upID];
-            [query getFirstObjectInBackgroundWithBlock:^(AVObject *object, NSError *error){
-                NSString* upName = object[@"up_name"];
-                NSString* photoURL = object[@"up_photo"];
-                NSString* upRoomName = object[@"room_name"];
-                NSString* roomCover = object[@"room_cover"];
+            //获取query不为空的话
+            if (query.countObjects) {
+                [query getFirstObjectInBackgroundWithBlock:^(AVObject *object, NSError *error){
+                    NSString* upName = object[@"up_name"];
+                    NSString* photoURL = object[@"up_photo"];
+                    NSString* upRoomName = object[@"room_name"];
+                    NSString* className = NULL;
+                    
+                    NSArray *tempArr = [upRoomName componentsSeparatedByString:@";;;"];
+
+                    if (tempArr.count) {
+                        upRoomName = tempArr[0];
+                        className = tempArr[1];
+                    }
+                    
+                    NSDictionary* upInfo = [NSDictionary dictionaryWithObjectsAndKeys:
+                                            upName,@"name",
+                                            photoURL,@"imgUrl",
+                                            upRoomName,@"title",
+                                            className,@"class", nil];
+                    [up_infos addObject:upInfo];
+                    dispatch_semaphore_signal(semaphore);
+                }];
                 
-                NSDictionary* upInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-                                        upName,@"name",
-                                        photoURL,@"imgUrl",
-                                        upRoomName,@"title",
-                                        roomCover,@"roomUrl", nil];
-                [up_infos addObject:upInfo];
-                NSLog(up_infos[0][@"title"]);
+            }
+            else{
                 dispatch_semaphore_signal(semaphore);
-            }];
+            }
         }
         
         
@@ -160,7 +189,6 @@
     for(NSDictionary *dict in _subscriptionArry){
         TCSubscribeFrame *sFrame = [[TCSubscribeFrame alloc]init];
         sFrame.subscription = [TCSubscribeModel subWithDict:dict];
-
         [_subFrames addObject:sFrame];
     }
     

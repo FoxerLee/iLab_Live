@@ -57,7 +57,9 @@
     subView.image = [UIImage imageNamed:@"subView.png"];
     [self.contentView addSubview:subView];
     
+    
     subTitle.text = sub.subTitle;
+    
     subTitle.font = [UIFont systemFontOfSize:LARGE_FONTSIZE];
     
     subName.text = sub.subName;
@@ -89,7 +91,7 @@
     [self.contentView addSubview:subName];
     
     subWatch = [[UILabel alloc]init];
-    [self.contentView addSubview:subWatch];
+    //[self.contentView addSubview:subWatch];
     
     subClass = [[UILabel alloc]init];
     [self.contentView addSubview:subClass];
@@ -112,7 +114,7 @@
     CGFloat watchX = nameX;
     CGFloat wathcY = CGRectGetMaxY(_name.frame) + Border;
     _watch = [[UILabel alloc] initWithFrame:CGRectMake(watchX, wathcY, lblWidth, lblHeight)];
-    [self.contentView addSubview:_watch];
+    //[self.contentView addSubview:_watch];
     _watch.font = [UIFont systemFontOfSize:FONTSIZE];
     _watch.textColor = [UIColor colorWithRed:125/255.f green:125/255.f blue:125/255.f alpha:1.0];
     _watch.text = @"观看：";
