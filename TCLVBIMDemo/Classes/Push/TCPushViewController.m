@@ -21,6 +21,7 @@
 #import "TXRTMPSDK/TXLivePlayer.h"
 #import "TCConstants.h"
 #import "NSString+Common.h"
+#import "LCManager.h"
 #import <CWStatusBarNotification/CWStatusBarNotification.h>
 #if POD_PITU
 #import "MCCameraDynamicView.h"
@@ -333,6 +334,16 @@
         [_txLivePublisher setMirror:YES];
         [[UIApplication sharedApplication] setIdleTimerDisabled:YES];
     }
+
+    if (![LCManager ifUpTableContainsUser:_liveInfo.userid]) {
+        [LCManager addUp:_liveInfo.userid withRoomCover:_liveInfo.userinfo.frontcover
+                nickname:_liveInfo.userinfo.nickname userPhoto:_liveInfo.userinfo.headpic roomName:_liveInfo.title];
+    } else {
+        [LCManager deleteUp:_liveInfo.userid];
+        [LCManager addUp:_liveInfo.userid withRoomCover:_liveInfo.userinfo.frontcover
+                nickname:_liveInfo.userinfo.nickname userPhoto:_liveInfo.userinfo.headpic roomName:_liveInfo.title];
+    }
+
     return YES;
 }
 #if POD_PITU

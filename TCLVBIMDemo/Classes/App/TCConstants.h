@@ -85,6 +85,10 @@
 #define  kTipsMsgStopPush  @"当前正在直播，是否退出直播？"
 #define  kLiveSearchPlaceHolder @"请输入昵称/直播号"
 
+// 初始数据
+#define kInitBalance  20000
+#define kIfChargeTest YES
+
 #ifndef POD_PITU
 #define POD_PITU 0
 #endif

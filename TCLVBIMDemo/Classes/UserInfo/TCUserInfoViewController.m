@@ -18,6 +18,7 @@
 #import "TCLoginModel.h"
 #import "TCConstants.h"
 #import "TXRTMPSDK/TXLivePlayer.h"
+#import "LCManager.h"
 #import <UIKit/UIKit.h>
 #import <mach/mach.h>
 #import <Foundation/Foundation.h>
@@ -111,7 +112,8 @@ extern BOOL g_bNeedEnterPushSettingView;
     _userInfoUISetArry = [NSMutableArray arrayWithArray:@[backFaceItem, followAndFansItem, balanceItem, historyItem, setItem, aboutItem, authItem]];
 #else
     CGFloat tableHeight = 205 + 65 + 45 + 45 + 45; //每个cell是45。除了“我”界面第一个cell是225，“设置”界面第一个cell是65
-    CGFloat quitBtnYSpace = 385 + 45 + 45 - 50;
+    CGFloat chargeBtnYSpace = 385 + 45 + 45 - 50;
+    CGFloat quitBtnYSpace = 385 + 45 + 45;
 
     _userInfoUISetArry = [NSMutableArray arrayWithArray:@[backFaceItem, followAndFansItem, balanceItem, historyItem, setItem, aboutItem]];
 #endif
@@ -125,7 +127,16 @@ extern BOOL g_bNeedEnterPushSettingView;
     [_dataTable setSeparatorColor:RGB(0xD8,0xD8,0xD8)];
     [self setExtraCellLineHidden:_dataTable];
     [self.view addSubview:_dataTable];
-    
+
+    UIButton *chargeBtn = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    chargeBtn.frame = CGRectMake(0, chargeBtnYSpace, self.view.frame.size.width, 45);
+    chargeBtn.titleLabel.font = [UIFont systemFontOfSize:16];
+    chargeBtn.backgroundColor = [UIColor whiteColor];
+    [chargeBtn setTitle:@"充值" forState:UIControlStateNormal];
+    [chargeBtn setTintColor:[UIColor blackColor]];
+    [chargeBtn addTarget:self action:@selector(onChargeBtnClick:) forControlEvents:UIControlEventTouchUpInside];
+    [self.view addSubview:chargeBtn];
+
     //计算退出登录按钮的位置和显示
     UIButton *button = [UIButton buttonWithType:UIButtonTypeRoundedRect];
     button.frame = CGRectMake(0, quitBtnYSpace, self.view.frame.size.width, 45);
@@ -174,9 +185,23 @@ extern BOOL g_bNeedEnterPushSettingView;
 -(void)viewWillAppear:(BOOL)animated
 {
     [super viewWillAppear:animated];
+    //TODO 取消注释
+    [_dataTable reloadData];
     [self.navigationController setNavigationBarHidden:YES];
     [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleLightContent animated:NO];
 }
+
+- (void)onChargeBtnClick:(UIButton *)sender {
+    if (kIfChargeTest) {
+        TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+        [LCManager increaseUser:profile.identifier Balance:10000 result:^(BOOL succeeded, NSError *error) {
+            if (succeeded) {
+                [_dataTable reloadData];
+            }
+        }];
+    }
+}
+
 /**
  *  用于接受头像下载成功后通知,因为用户可能因为网络情况下载头像很慢甚至失败数次,导致用户信息页面显示默认头像
  *  当用户头像下载成功后刷新tableview,使得头像信息得以更新
@@ -217,6 +242,22 @@ extern BOOL g_bNeedEnterPushSettingView;
 -(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
 {
     TCUserInfoCellItem *item = _userInfoUISetArry[indexPath.row];
+    if (item.type == TCUserInfo_Balance) {
+        TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+        NSInteger goldCount = [LCManager getUserBalanceById:profile.identifier];
+        NSString *count;
+        if (goldCount >= 0) {
+            count = [NSString stringWithFormat:@"%d", goldCount];
+        } else {
+            if ([LCManager initUser:profile.identifier Balance:kInitBalance]) {
+                count = [NSString stringWithFormat:@"%d", kInitBalance];
+            } else {
+                count = [NSString stringWithFormat:@"%d", 0];
+            }
+        }
+        item.value = count;
+    }
+
     TCUserInfoTableViewCell *cell = (TCUserInfoTableViewCell*)[tableView  dequeueReusableCellWithIdentifier:@"cell"];
     if(cell == nil)
     {

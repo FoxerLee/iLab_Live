@@ -43,7 +43,7 @@
     
     [self initData];
 
-    _dataTable = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, 320, 600) style:UITableViewStylePlain];
+    _dataTable = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, 340, 600) style:UITableViewStylePlain];
     
     
     _dataTable.delegate = self;
@@ -67,9 +67,12 @@
 
     //请求二 根据被订阅者ID查询被订阅信息
     NSBlockOperation *b = [NSBlockOperation blockOperationWithBlock:^{
-        dispatch_semaphore_t sema = dispatch_semaphore_create(-upIDs.count+1);
-        [self getUpInfos:upIDs :_subscriptionArry :sema];
-        dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+        if (upIDs.count) {
+            dispatch_semaphore_t sema = dispatch_semaphore_create(-upIDs.count+1);
+            [self getUpInfos:upIDs :_subscriptionArry :sema];
+            dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+        }
+        
     }];
     
     //请求三更新UI
@@ -179,7 +182,7 @@
     
     cell.subFrame = _subFrames[indexPath.row];
     
-    
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
     return cell;
 }
 

@@ -122,10 +122,31 @@
     if (cell == nil) {
         cell = [[TCLiveDetailCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"TCLiveDetailCell"];
     }
-//    NSMutableArray *lives = self.groupInfo.liveList;
+    TCLiveInfo *live = _lives[(NSUInteger) indexPath.row];
 
-    cell.model = _lives[(NSUInteger) indexPath.row];
-    cell.typeLabel.text = self.title;
+    if ([self.title equalsString:@"搜索结果"]) {
+        NSArray *separateArray = [live.title componentsSeparatedByString:@";;;"];
+        NSString *typeName = @"";
+        NSString *trueTitle = @"";
+        if (separateArray.count > 2) {
+            trueTitle = separateArray[0];
+            for (int i = 0; i < separateArray.count - 1; i++) {
+                trueTitle = [NSString stringWithFormat:@"%@;;;%@", trueTitle, separateArray[i]];
+            }
+            typeName = separateArray[separateArray.count-1];
+        } else if (separateArray.count == 1) {
+            trueTitle = separateArray[0];
+            typeName = @"游戏";
+        } else {
+            trueTitle = separateArray[0];
+            typeName = separateArray[1];
+        }
+        cell.typeLabel.text = typeName;
+    } else {
+        cell.typeLabel.text = self.title;
+    }
+    cell.model = live;
+
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
     return cell;
 }
