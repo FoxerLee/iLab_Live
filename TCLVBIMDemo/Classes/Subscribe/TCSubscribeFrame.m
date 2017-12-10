@@ -45,7 +45,7 @@
     _timeFrame = CGRectMake(timeX, timeY, lblWidth, lblHeight);
     
     CGFloat classX = timeX;
-    CGFloat classY = CGRectGetMaxY(_timeFrame) + Border;
+    CGFloat classY = CGRectGetMaxY(_timeFrame) + Border + 1;
     _classFrame = CGRectMake(classX, classY, lblWidth, lblHeight);
     
     
