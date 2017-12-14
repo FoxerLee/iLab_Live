@@ -21,7 +21,6 @@
 }
 
 - (void)initUI {
-    //TODO 背景颜色调整
     self.backgroundColor = [UIColor colorWithWhite:0.2f alpha:0.1f];
 
     _giftImg = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"gift_racket"]];

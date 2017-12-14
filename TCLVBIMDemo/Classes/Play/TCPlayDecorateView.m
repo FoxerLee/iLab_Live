@@ -1107,7 +1107,7 @@
             break;
         }
 
-        //todo: add gift message handle  "棒棒糖","生日蛋糕","钻戒","跑车","豪华游艇","火箭"
+        //add gift message handle  "棒棒糖","生日蛋糕","钻戒","跑车","豪华游艇","火箭"
         // 礼物消息格式 "类型,数量"
         case AVIMCMD_Custom_Gift: {
             NSArray *giftArray = [msgText componentsSeparatedByString:@","];

@@ -17,6 +17,10 @@
 + (BOOL)addUser:(NSString *)followerId followUp:(NSString *)upId;
 // 用户取消关注主播
 + (BOOL)cancelUser:(NSString *)followerId followUp:(NSString *)upId;
+// 获取用户的订阅数量
++ (NSInteger)getUserSubscribeCount:(NSString *)userId;
+// 获取用户粉丝的数量
++ (NSInteger)getUserFansCount:(NSString *)userId;
 
 // 获取一个用户的总资产，若用户不存在则返回-1
 + (NSInteger)getUserBalanceById:(NSString *)userId;

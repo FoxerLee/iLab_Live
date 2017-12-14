@@ -16,6 +16,7 @@
 @interface TCSubscribeViewController (){
     NSMutableArray *_subFrames;
     NSMutableArray* upIDs;
+    UIView *_nullDataView;
 }
 @end
 
@@ -45,7 +46,8 @@
     _dataTable.separatorStyle = UITableViewCellSeparatorStyleNone;
     
     [self.view addSubview:_dataTable];
-    
+
+    [self initNullView];
     
     //从leancloud端获取数据
     //[self getUpInfoFromNetwork];
@@ -69,6 +71,25 @@
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
+}
+
+- (void)initNullView {
+    CGFloat SCREEN_WIDTH = [UIScreen mainScreen].bounds.size.width;
+    CGFloat nullViewWidth   = 90;
+    CGFloat nullViewHeight  = 115;
+    CGFloat imageViewWidth  = 68;
+    CGFloat imageViewHeight = 74;
+    UIImageView *imageView = [[UIImageView alloc] initWithFrame:CGRectMake((nullViewWidth - imageViewWidth)/2, 0, imageViewWidth, imageViewHeight)];
+    imageView.image = [UIImage imageNamed:@"null_image"];
+    UILabel *label = [[UILabel alloc] initWithFrame:CGRectMake(0, imageView.bottom + 5, nullViewWidth, 22)];
+    label.text = @"暂无直播哦";
+    label.font = [UIFont systemFontOfSize:16];
+    label.textColor = UIColorFromRGB(0x777777);
+    _nullDataView = [[UIView alloc] initWithFrame:CGRectMake((SCREEN_WIDTH - nullViewWidth)/2, (self.view.height - nullViewHeight)/2, nullViewWidth, nullViewHeight)];
+    [_nullDataView addSubview:imageView];
+    [_nullDataView addSubview:label];
+    _nullDataView.hidden = YES;
+    [self.view addSubview:_nullDataView];
 }
 
 - (void)getUpInfoFromNetwork{
@@ -102,6 +123,7 @@
         dispatch_async(dispatch_get_main_queue(), ^{
             [self initData];
             [self.dataTable reloadData];
+            _nullDataView.hidden = _subscriptionArry.count != 0;
         });
     }];
     
@@ -162,11 +184,10 @@
                         className = tempArr[1];
                     }
                     
-                    NSDictionary* upInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-                                            upName,@"name",
-                                            photoURL,@"imgUrl",
-                                            upRoomName,@"title",
-                                            className,@"class", nil];
+                    NSDictionary* upInfo = @{@"name": upName,
+                            @"imgUrl": photoURL,
+                            @"title": upRoomName,
+                            @"class": className};
                     [up_infos addObject:upInfo];
                     dispatch_semaphore_signal(semaphore);
                 }];

@@ -534,6 +534,9 @@
 
 -(void)closeRTMP {
     [self stopRtmp];
+
+    // 直播结束后，从leancloud中正在直播的列表中删除对应主播信息
+    [LCManager deleteUp:_liveInfo.userid];
     
     if (_msgHandler)
     {

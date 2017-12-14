@@ -38,6 +38,8 @@
 
 @property (nonatomic, strong) LiveUserModel *userModel;
 
+@property (nonatomic) NSInteger recievedGold;
+
 @end
 
 @implementation TCPushDecorateView
@@ -131,6 +133,7 @@
     // init gift arr
     self.giftArr = [LiveGiftListModel mj_objectArrayWithKeyValuesArray:self.giftDataSource];
     [self customGiftShow];
+    _recievedGold = 0;
 
     return self;
 }
@@ -300,7 +303,7 @@
     _btnLog.bounds = CGRectMake(0, 0, icon_size, icon_size);
     [_btnLog setImage:[UIImage imageNamed:@"log"] forState:UIControlStateNormal];
     [_btnLog addTarget:self action:@selector(clickLog:) forControlEvents:UIControlEventTouchUpInside];
-    [self addSubview:_btnLog];
+//    [self addSubview:_btnLog];
     
     //退出VC
     _closeBtn = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -1181,7 +1184,7 @@
             if (alertView == _closeAlert || alertView == _closeErrRstAlert) {
                 // 直播过程中退出时展示统计信息
                 __weak __typeof(self) weakSelf = self;
-                _resultView = [[TCPushShowResultView alloc] initWithFrame:self.bounds resultData:_topView backHomepage:^{
+                _resultView = [[TCPushShowResultView alloc] initWithFrame:self.bounds recievedGold:_recievedGold resultData:_topView backHomepage:^{
                     [weakSelf.delegate closeVC];
                 }];
             } else if (alertView == _closeErrAlert) {
@@ -1378,7 +1381,7 @@
             break;
         }
 
-        // todo: handle gift msg
+        // handle gift msg
         case AVIMCMD_Custom_Gift: {
             NSArray *giftArray = [msgText componentsSeparatedByString:@","];
             NSString *giftName = giftArray[0];
@@ -1401,7 +1404,9 @@
             LiveUserModel *user = [[LiveUserModel alloc] init];
             user.name = info.imUserName;
             user.iconUrl = info.imUserIconUrl;
-            LiveGiftShowModel *model = [LiveGiftShowModel giftModel:self.giftArr[index] userModel:user];
+            LiveGiftListModel *giftModel = self.giftArr[index];
+            _recievedGold += giftModel.goldCount.intValue*giftNumber;
+            LiveGiftShowModel *model = [LiveGiftShowModel giftModel:giftModel userModel:user];
             model.toNumber = (NSUInteger) giftNumber;
             [self.customGiftShow animatedWithGiftModel:model];
             [self giftAnimate:giftName];
@@ -1629,12 +1634,15 @@
     
     ShowResultComplete _backHomepage;
     TCShowLiveTopView *_resultData;
+
+    NSInteger _recievedGold;
 }
 
-- (instancetype)initWithFrame:(CGRect)frame resultData:(TCShowLiveTopView *)resultData backHomepage:(ShowResultComplete)backHomepage {
+- (instancetype)initWithFrame:(CGRect)frame recievedGold:(NSInteger)goldCount resultData:(TCShowLiveTopView *)resultData backHomepage:(ShowResultComplete)backHomepage {
     if (self = [super initWithFrame:frame]) {
         _resultData = resultData;
         _backHomepage = backHomepage;
+        _recievedGold = goldCount;
         
         [self initUI];
         [_backBtn addTarget:self action:@selector(clickBackBtn) forControlEvents:UIControlEventTouchUpInside];
@@ -1690,14 +1698,14 @@
     _praiseLabel.textAlignment = NSTextAlignmentCenter;
     _praiseLabel.font = [UIFont boldSystemFontOfSize:20];
     _praiseLabel.textColor = [UIColor whiteColor];
-    [_praiseLabel setText:[NSString stringWithFormat:@"%ld\n", [_resultData getLikeCount]]];
+    [_praiseLabel setText:[NSString stringWithFormat:@"%ld\n", _recievedGold]];
     [self addSubview:_praiseLabel];
     
     _praiseTipLabel = [[UILabel alloc] init];
     _praiseTipLabel.textAlignment = NSTextAlignmentCenter;
     _praiseTipLabel.font = [UIFont boldSystemFontOfSize:14];
     _praiseTipLabel.textColor = [UIColor whiteColor];
-    [_praiseTipLabel setText:[NSString stringWithFormat:@"获赞数量"]];
+    [_praiseTipLabel setText:[NSString stringWithFormat:@"礼物收入"]];
     [self addSubview:_praiseTipLabel];
     
     

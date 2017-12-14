@@ -51,6 +51,25 @@
     }
 }
 
++ (NSInteger)getUserSubscribeCount:(NSString *)userId {
+    AVQuery *query = [AVQuery queryWithClassName:@"subscription"];
+
+    [query whereKey:@"follower" equalTo:userId];
+
+    NSArray *result = [query findObjects];
+
+    return result.count;
+}
+
++ (NSInteger)getUserFansCount:(NSString *)userId {
+    AVQuery *query = [AVQuery queryWithClassName:@"subscription"];
+
+    [query whereKey:@"up" equalTo:userId];
+
+    NSArray *result = [query findObjects];
+
+    return result.count;
+}
 
 #pragma mark - About user balance
 

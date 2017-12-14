@@ -74,7 +74,6 @@
  * @param headPic
  * @param msgContent  "giftName,number", type: "棒棒糖","生日蛋糕","钻戒","跑车","豪华游艇","火箭"
  */
-// TODO: add gift msg handle
 - (void)sendMessage:(AVIMCommand)cmd userId:(NSString *)userId nickName:(NSString *)nickName headPic:(NSString *)headPic msg:(NSString *)msgContent
 {
     if ((AVIMCMD_Custom_Text == cmd || AVIMCMD_Custom_Danmaku == cmd) && msgContent.length == 0)

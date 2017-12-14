@@ -30,7 +30,12 @@
 
 extern BOOL g_bNeedEnterPushSettingView;
 
-@implementation TCUserInfoViewController
+@implementation TCUserInfoViewController {
+    NSInteger _subscribeCount;
+    NSInteger _fansCount;
+    UIButton *myFollow;
+    UIButton *myFans;
+}
 
 - (void)dealloc
 {
@@ -146,9 +151,9 @@ extern BOOL g_bNeedEnterPushSettingView;
     [button setTitleColor:[UIColor blackColor]forState:UIControlStateNormal];
     [button addTarget:self action:@selector(logout:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:button];
-    
+
     //我的关注 按钮的显示
-    UIButton *myFollow = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    myFollow = [UIButton buttonWithType:UIButtonTypeRoundedRect];
     myFollow.frame = CGRectMake(0, 205, self.view.frame.size.width / 2, 55); //间隙为5
     myFollow.titleLabel.font = [UIFont systemFontOfSize:16];
     [myFollow setTitle:@"我的关注" forState:UIControlStateNormal];
@@ -156,9 +161,9 @@ extern BOOL g_bNeedEnterPushSettingView;
     [myFollow setBackgroundColor:[UIColor whiteColor]];
     [myFollow addTarget:self action:@selector(onShowMyFollow:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:myFollow];
-    
+
     //我的粉丝 按钮的显示
-    UIButton *myFans = [UIButton buttonWithType:UIButtonTypeRoundedRect];
+    myFans = [UIButton buttonWithType:UIButtonTypeRoundedRect];
     myFans.frame = CGRectMake(CGRectGetMaxX(myFollow.frame), 205, self.view.frame.size.width / 2, 55);
     myFans.titleLabel.font = [UIFont systemFontOfSize:16];
     [myFans setTitle:@"我的粉丝" forState:UIControlStateNormal];
@@ -166,8 +171,6 @@ extern BOOL g_bNeedEnterPushSettingView;
     [myFans setBackgroundColor:[UIColor whiteColor]];
     [myFans addTarget:self action:@selector(onShowMyFans:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:myFans];
-    
-    
     
     // 设置通知消息,接受到通知后重绘cell,确保更改后的用户资料能同步到用户信息界面
     [[NSNotificationCenter defaultCenter] removeObserver:self name:KReloadUserInfoNotification object:nil];
@@ -185,12 +188,21 @@ extern BOOL g_bNeedEnterPushSettingView;
 -(void)viewWillAppear:(BOOL)animated
 {
     [super viewWillAppear:animated];
-    //TODO 取消注释
     [_dataTable reloadData];
+    dispatch_async(dispatch_get_global_queue(0, 0), ^{
+        [self getInfoData];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self setupBtn];
+        });
+    });
     [self.navigationController setNavigationBarHidden:YES];
     [[UIApplication sharedApplication] setStatusBarStyle:UIStatusBarStyleLightContent animated:NO];
 }
 
+/**
+ * 充值按钮点击事件
+ * @param sender
+ */
 - (void)onChargeBtnClick:(UIButton *)sender {
     if (kIfChargeTest) {
         TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
@@ -200,6 +212,20 @@ extern BOOL g_bNeedEnterPushSettingView;
             }
         }];
     }
+}
+
+- (void)getInfoData {
+    TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+    _subscribeCount = [LCManager getUserSubscribeCount:profile.identifier];
+    _fansCount = [LCManager getUserFansCount:profile.identifier];
+}
+
+- (void)setupBtn {
+    NSString *subscribeTitle = [NSString stringWithFormat:@"我的订阅：%d", _subscribeCount];
+    NSString *fansTitle = [NSString stringWithFormat:@"我的粉丝：%d", _fansCount];
+
+    [myFollow setTitle:subscribeTitle forState:UIControlStateNormal];
+    [myFans setTitle:fansTitle forState:UIControlStateNormal];
 }
 
 /**

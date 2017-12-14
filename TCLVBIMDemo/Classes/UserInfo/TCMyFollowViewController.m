@@ -18,13 +18,7 @@
 #import <Foundation/Foundation.h>
 #import <AVFoundation/AVFoundation.h>
 #import "UIActionSheet+BlocksKit.h"
-//
-//  TCSubscribeViewController.m
-//  TCLVBIMDemo
-//
-//  Created by Ricardo on 2017/11/19.
-//  Copyright © 2017年 tencent. All rights reserved.
-//
+
 
 #import "TCSubscribeViewController.h"
 #import "TCSubscribeTableViewCell.h"
@@ -46,6 +40,8 @@
 - (void)viewDidLoad {
     [super viewDidLoad];
     // Do any additional setup after loading the view.
+
+    self.title = @"我的关注";
     
     _subFrames = [NSMutableArray array];
     
@@ -75,7 +71,7 @@
 
 - (void)viewWillAppear:(BOOL)animated{
     [super viewWillAppear:true];
-    
+    [self.navigationController setNavigationBarHidden:NO];
     [self getUpInfoFromNetwork];
 }
 - (void)viewWillDisappear:(BOOL)animated{

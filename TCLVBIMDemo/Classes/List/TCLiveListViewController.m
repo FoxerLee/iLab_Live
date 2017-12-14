@@ -201,6 +201,9 @@
 
 }
 
+/**
+ *   Enter search view controller
+ */
 - (void)enterSearchView {
     NSString *keyWord = _searchInput.text;
     NSMutableArray *searchLives = [NSMutableArray array];
@@ -659,7 +662,7 @@
         //[[HUDHelper sharedInstance] tipMessage:@"没有啦"];
     }
 
-    NSLog(@"%d", self.lives.count);
+    NSLog(@"Total live count: %d", self.lives.count);
     //对self.lives 进行分组
     [self groupingLives];
 
@@ -710,7 +713,6 @@
 
     if (self.lives.count != 0) {
         for (TCLiveInfo *live in self.lives) {
-            // TODO: 测试分组逻辑
             NSArray *separateArray = [live.title componentsSeparatedByString:@";;;"];
             NSString *typeName = @"";
             NSString *trueTitle = @"";

@@ -79,7 +79,7 @@ typedef NS_ENUM(NSInteger,TCLVFilterType) {
 
 typedef void (^ShowResultComplete)();
 
-- (instancetype)initWithFrame:(CGRect)frame resultData:(TCShowLiveTopView *)resultData backHomepage:(ShowResultComplete)backHomepage;
+- (instancetype)initWithFrame:(CGRect)frame recievedGold:(NSInteger)goldCount resultData:(TCShowLiveTopView *)resultData backHomepage:(ShowResultComplete)backHomepage;
 
 -(void)keyboardFrameDidChange:(NSNotification*)notice;
 

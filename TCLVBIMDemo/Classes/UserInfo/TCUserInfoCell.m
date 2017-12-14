@@ -139,8 +139,9 @@
             self.userInteractionEnabled = NO;
             self.accessoryType = UITableViewCellAccessoryNone;
             TCUserInfoData  *_profile = [[TCUserInfoModel sharedInstance] getUserProfile ];
-            CGRect mainScreenSize = [ UIScreen mainScreen ].applicationFrame;
+            CGRect mainScreenSize = [ UIScreen mainScreen ].bounds;
             CGSize titleTextSize  = [_profile.nickName sizeWithAttributes:@{NSFontAttributeName:nickText.font}];
+            NSLog(@"face url: %@", _profile.faceURL);
             [faceImage sd_setImageWithURL:[NSURL URLWithString:[TCUtil transImageURL2HttpsURL:_profile.faceURL]] placeholderImage:[UIImage imageNamed:@"default_user"]];
             faceImage.frame = CGRectMake(20, 85, 100, 100);
 //            faceImage.layer.cornerRadius = 50;
@@ -186,12 +187,18 @@
             [self addSubview:itemText];
 
             UILabel *countLabel = [[UILabel alloc] init];
-            countLabel.frame = CGRectMake(CGRectGetMaxX(itemText.frame) + 10, self.textLabel.frame.origin.y, 160, 45);
+            countLabel.frame = CGRectMake(CGRectGetMaxX(itemText.frame) + 10, self.textLabel.frame.origin.y, 130, 45);
             countLabel.textColor = [UIColor blackColor];
             countLabel.font = [UIFont systemFontOfSize:16];
             countLabel.text = item.value;
             countLabel.textAlignment = NSTextAlignmentRight;
             [self addSubview:countLabel];
+
+            UIImageView *goldView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"gold_img_gray.png"]];
+            goldView.contentMode = UIViewContentModeScaleAspectFit;
+            goldView.center = CGPointMake(CGRectGetMaxX(countLabel.frame) + 15, countLabel.center.y);
+            goldView.bounds = CGRectMake(0, 0, 30, 20);
+            [self addSubview:goldView];
 
         }
         break;
