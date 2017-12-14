@@ -149,7 +149,7 @@ extern BOOL g_bNeedEnterPushSettingView;
     
     //我的关注 按钮的显示
     UIButton *myFollow = [UIButton buttonWithType:UIButtonTypeRoundedRect];
-    myFollow.frame = CGRectMake(0, 205, self.view.frame.size.width / 2, 55); //间隙为5
+    myFollow.frame = CGRectMake(0, 205, self.view.frame.size.width / 2, 55); //下间隙为5 左右间隙为2
     myFollow.titleLabel.font = [UIFont systemFontOfSize:16];
     [myFollow setTitle:@"我的关注" forState:UIControlStateNormal];
     [myFollow setTitleColor:[UIColor blackColor]forState:UIControlStateNormal];
@@ -167,6 +167,11 @@ extern BOOL g_bNeedEnterPushSettingView;
     [myFans addTarget:self action:@selector(onShowMyFans:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:myFans];
     
+    //我的关注和我的粉丝中间的细线
+    UIView *line = [[UIView alloc] init];
+    line.frame = CGRectMake(CGRectGetMaxX(myFollow.frame), 205 + 10, 1, 55 - 20);
+    [line setBackgroundColor:[UIColor grayColor]];
+    [self.view addSubview:line];
     
     
     // 设置通知消息,接受到通知后重绘cell,确保更改后的用户资料能同步到用户信息界面
@@ -247,12 +252,12 @@ extern BOOL g_bNeedEnterPushSettingView;
         NSInteger goldCount = [LCManager getUserBalanceById:profile.identifier];
         NSString *count;
         if (goldCount >= 0) {
-            count = [NSString stringWithFormat:@"%d", goldCount];
+            count = [NSString stringWithFormat:@"%d 💎", goldCount];
         } else {
             if ([LCManager initUser:profile.identifier Balance:kInitBalance]) {
-                count = [NSString stringWithFormat:@"%d", kInitBalance];
+                count = [NSString stringWithFormat:@"%d 💎", kInitBalance];
             } else {
-                count = [NSString stringWithFormat:@"%d", 0];
+                count = [NSString stringWithFormat:@"%d 💎", 0];
             }
         }
         item.value = count;

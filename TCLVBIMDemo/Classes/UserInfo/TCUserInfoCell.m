@@ -93,11 +93,17 @@
 {
     if (TCUserInfo_View == item.type)
     {
-        UIView* bgview = [[UIView alloc] init];
-        bgview.opaque = YES;
-//        bgview.backgroundColor = RGB(0x22,0x2B,0x48);
-        bgview.backgroundColor = RGB(0xbf,0xe3,0xeb);
-        [self setBackgroundView:bgview];
+        CGRect mainScreenSize = [ UIScreen mainScreen ].applicationFrame;
+        UIView* bgviewUP = [[UIView alloc] init];
+        bgviewUP.frame = CGRectMake(0, 0, mainScreenSize.size.width, 85 + 50); // 85是头像的纵坐标，50是头像高度的一半
+        UIView* bgviewDown = [[UIView alloc] init];
+        bgviewDown.frame = CGRectMake(0, CGRectGetMaxY(bgviewUP.frame), mainScreenSize.size.width, 205 - 135);
+        bgviewUP.opaque = YES;
+        bgviewDown.opaque = YES;
+        bgviewUP.backgroundColor = RGB(0xbf,0xe3,0xeb);
+        bgviewDown.backgroundColor = RGB(0xff,0xff,0xff);
+        [self addSubview:bgviewUP];
+        [self addSubview:bgviewDown];
         
         UIColor *uiBorderColor = RGB(0x0A,0xCC,0xAC);
         faceImage = [[UIImageView alloc ] init];
@@ -139,7 +145,6 @@
             self.userInteractionEnabled = NO;
             self.accessoryType = UITableViewCellAccessoryNone;
             TCUserInfoData  *_profile = [[TCUserInfoModel sharedInstance] getUserProfile ];
-            CGRect mainScreenSize = [ UIScreen mainScreen ].applicationFrame;
             CGSize titleTextSize  = [_profile.nickName sizeWithAttributes:@{NSFontAttributeName:nickText.font}];
             [faceImage sd_setImageWithURL:[NSURL URLWithString:[TCUtil transImageURL2HttpsURL:_profile.faceURL]] placeholderImage:[UIImage imageNamed:@"default_user"]];
             faceImage.frame = CGRectMake(20, 85, 100, 100);
@@ -192,6 +197,7 @@
             countLabel.text = item.value;
             countLabel.textAlignment = NSTextAlignmentRight;
             [self addSubview:countLabel];
+            
 
         }
         break;
