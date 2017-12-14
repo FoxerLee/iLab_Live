@@ -151,7 +151,7 @@ extern BOOL g_bNeedEnterPushSettingView;
     [button setTitleColor:[UIColor blackColor]forState:UIControlStateNormal];
     [button addTarget:self action:@selector(logout:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:button];
-
+    
     //我的关注 按钮的显示
     myFollow = [UIButton buttonWithType:UIButtonTypeRoundedRect];
     myFollow.frame = CGRectMake(0, 205, self.view.frame.size.width / 2, 55); //间隙为5
@@ -161,7 +161,7 @@ extern BOOL g_bNeedEnterPushSettingView;
     [myFollow setBackgroundColor:[UIColor whiteColor]];
     [myFollow addTarget:self action:@selector(onShowMyFollow:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:myFollow];
-
+    
     //我的粉丝 按钮的显示
     myFans = [UIButton buttonWithType:UIButtonTypeRoundedRect];
     myFans.frame = CGRectMake(CGRectGetMaxX(myFollow.frame), 205, self.view.frame.size.width / 2, 55);
@@ -171,6 +171,13 @@ extern BOOL g_bNeedEnterPushSettingView;
     [myFans setBackgroundColor:[UIColor whiteColor]];
     [myFans addTarget:self action:@selector(onShowMyFans:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:myFans];
+    
+    //我的关注和我的粉丝中间的细线
+    UIView *line = [[UIView alloc] init];
+    line.frame = CGRectMake(CGRectGetMaxX(myFollow.frame), 205 + 10, 1, 55 - 20);
+    [line setBackgroundColor:[UIColor grayColor]];
+    [self.view addSubview:line];
+
     
     // 设置通知消息,接受到通知后重绘cell,确保更改后的用户资料能同步到用户信息界面
     [[NSNotificationCenter defaultCenter] removeObserver:self name:KReloadUserInfoNotification object:nil];
@@ -273,12 +280,12 @@ extern BOOL g_bNeedEnterPushSettingView;
         NSInteger goldCount = [LCManager getUserBalanceById:profile.identifier];
         NSString *count;
         if (goldCount >= 0) {
-            count = [NSString stringWithFormat:@"%d", goldCount];
+            count = [NSString stringWithFormat:@"%d 💎", goldCount];
         } else {
             if ([LCManager initUser:profile.identifier Balance:kInitBalance]) {
-                count = [NSString stringWithFormat:@"%d", kInitBalance];
+                count = [NSString stringWithFormat:@"%d 💎", kInitBalance];
             } else {
-                count = [NSString stringWithFormat:@"%d", 0];
+                count = [NSString stringWithFormat:@"%d 💎", 0];
             }
         }
         item.value = count;

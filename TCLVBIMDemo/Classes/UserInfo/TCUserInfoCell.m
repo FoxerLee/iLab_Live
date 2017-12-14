@@ -93,11 +93,17 @@
 {
     if (TCUserInfo_View == item.type)
     {
-        UIView* bgview = [[UIView alloc] init];
-        bgview.opaque = YES;
-//        bgview.backgroundColor = RGB(0x22,0x2B,0x48);
-        bgview.backgroundColor = RGB(0xbf,0xe3,0xeb);
-        [self setBackgroundView:bgview];
+        CGRect mainScreenSize = [ UIScreen mainScreen ].applicationFrame;
+        UIView* bgviewUP = [[UIView alloc] init];
+        bgviewUP.frame = CGRectMake(0, 0, mainScreenSize.size.width, 85 + 50); // 85是头像的纵坐标，50是头像高度的一半
+        UIView* bgviewDown = [[UIView alloc] init];
+        bgviewDown.frame = CGRectMake(0, CGRectGetMaxY(bgviewUP.frame), mainScreenSize.size.width, 205 - 135);
+        bgviewUP.opaque = YES;
+        bgviewDown.opaque = YES;
+        bgviewUP.backgroundColor = RGB(0xbf,0xe3,0xeb);
+        bgviewDown.backgroundColor = RGB(0xff,0xff,0xff);
+        [self addSubview:bgviewUP];
+        [self addSubview:bgviewDown];
         
         UIColor *uiBorderColor = RGB(0x0A,0xCC,0xAC);
         faceImage = [[UIImageView alloc ] init];
@@ -139,7 +145,7 @@
             self.userInteractionEnabled = NO;
             self.accessoryType = UITableViewCellAccessoryNone;
             TCUserInfoData  *_profile = [[TCUserInfoModel sharedInstance] getUserProfile ];
-            CGRect mainScreenSize = [ UIScreen mainScreen ].bounds;
+            CGRect mainScreenSize = [ UIScreen mainScreen ].applicationFrame;
             CGSize titleTextSize  = [_profile.nickName sizeWithAttributes:@{NSFontAttributeName:nickText.font}];
             NSLog(@"face url: %@", _profile.faceURL);
             [faceImage sd_setImageWithURL:[NSURL URLWithString:[TCUtil transImageURL2HttpsURL:_profile.faceURL]] placeholderImage:[UIImage imageNamed:@"default_user"]];
@@ -187,18 +193,12 @@
             [self addSubview:itemText];
 
             UILabel *countLabel = [[UILabel alloc] init];
-            countLabel.frame = CGRectMake(CGRectGetMaxX(itemText.frame) + 10, self.textLabel.frame.origin.y, 130, 45);
+            countLabel.frame = CGRectMake(CGRectGetMaxX(itemText.frame) + 10, self.textLabel.frame.origin.y, 160, 45);
             countLabel.textColor = [UIColor blackColor];
             countLabel.font = [UIFont systemFontOfSize:16];
             countLabel.text = item.value;
             countLabel.textAlignment = NSTextAlignmentRight;
             [self addSubview:countLabel];
-
-            UIImageView *goldView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"gold_img_gray.png"]];
-            goldView.contentMode = UIViewContentModeScaleAspectFit;
-            goldView.center = CGPointMake(CGRectGetMaxX(countLabel.frame) + 15, countLabel.center.y);
-            goldView.bounds = CGRectMake(0, 0, 30, 20);
-            [self addSubview:goldView];
 
         }
         break;

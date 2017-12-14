@@ -30,7 +30,7 @@
     [super viewDidLoad];
     UIColor *textColour = [UIColor colorWithRed:36/255.0 green:203/255.0 blue:173/255.0 alpha:1];
     self.navigationController.navigationBar.tintColor    = textColour;
-    self.navigationItem.title = @"观看历史";
+    self.navigationItem.title = @"观看记录";
     [self.navigationController.navigationBar setTitleTextAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:18],NSForegroundColorAttributeName:[UIColor blackColor]}] ;
     
     self.view.backgroundColor = RGB(0xF3,0xF3,0xF3);
