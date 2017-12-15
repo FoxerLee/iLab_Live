@@ -11,6 +11,7 @@
 #import "TLSSDK/TLSHelper.h"
 #import "TLSSDK/TLSErrInfo.h"
 #import "TCLoginModel.h"
+#import "LCManager.h"
 
 @interface TCRegisterViewController ()
 
@@ -218,6 +219,8 @@
     __weak typeof(self) weakSelf = self;
     [[HUDHelper sharedInstance] syncLoading];
     int ret = [[TCTLSPlatform sharedInstance] pwdRegister:userName andPassword:pwd succ:^(TLSUserInfo *userInfo) {
+        // 用户注册成功后初始化资产
+        [LCManager initUser:userInfo.identifier Balance:20000];
         // 注册成功后直接登录
         dispatch_async(dispatch_get_main_queue(), ^{
             int ret2 = [[TCTLSPlatform sharedInstance] pwdLogin:userName andPassword:pwd succ:^(TLSUserInfo *userInfo) {

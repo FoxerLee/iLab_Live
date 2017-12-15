@@ -22,7 +22,7 @@
 
 @property (strong, nonatomic) UITableView      *tableView;
 
-@property (strong, nonatomic) NSMutableArray   *userInfoArry;
+@property (strong, nonatomic) NSMutableArray   *userInfoArray;
 
 @end
 

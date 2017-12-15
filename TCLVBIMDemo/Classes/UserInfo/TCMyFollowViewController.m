@@ -8,27 +8,11 @@
 
 #import "TCMyFollowViewController.h"
 #import "TCUserInfoCell.h"
-#import "ImSDK/TIMFriendshipManager.h"
-#import "TCUserInfoModel.h"
-#import "TCLoginModel.h"
-#import "TCUploadHelper.h"
-
-#import <UIKit/UIKit.h>
-#import <mach/mach.h>
-#import <Foundation/Foundation.h>
-#import <AVFoundation/AVFoundation.h>
-#import "UIActionSheet+BlocksKit.h"
+#import "TCUserSubscribeCell.h"
+#import "LCManager.h"
 
 
-#import "TCSubscribeViewController.h"
-#import "TCSubscribeTableViewCell.h"
-#import "TCSubscribeModel.h"
-#import "TCSubscribeFrame.h"
-#import "TCUserInfoModel.h"
-
-
-@interface TCMyFollowViewController (){
-    NSMutableArray *_subFrames;
+@interface TCMyFollowViewController ()<TCUserSubscribeCellDelegate>{
     NSMutableArray* upIDs;
 }
 @end
@@ -41,233 +25,106 @@
     [super viewDidLoad];
     // Do any additional setup after loading the view.
 
-    self.title = @"我的关注";
-    
-    _subFrames = [NSMutableArray array];
-    
-    //用于存储被订阅者id
-    upIDs = [NSMutableArray array];
-    
-    _subscriptionArry = [NSMutableArray array];
-    
+    self.title = @"我的订阅";
+
     [self initData];
-    
-    _dataTable = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, 340, 600) style:UITableViewStylePlain];
-    
-    
+
+    _dataTable = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, self.view.width, self.view.height-30) style:UITableViewStylePlain];
+
     _dataTable.delegate = self;
     _dataTable.dataSource = self;
-    
+
     _dataTable.separatorStyle = UITableViewCellSeparatorStyleNone;
-    
+
     [self.view addSubview:_dataTable];
-    
-    
-    //从leancloud端获取数据
-    //[self getUpInfoFromNetwork];
-    
-    
+}
+
+- (void)initData {
+    upIDs = [NSMutableArray array];
+    _subscriptionArry = [NSMutableArray array];
 }
 
 - (void)viewWillAppear:(BOOL)animated{
     [super viewWillAppear:true];
     [self.navigationController setNavigationBarHidden:NO];
-    [self getUpInfoFromNetwork];
+    [self getUpIds];
 }
 - (void)viewWillDisappear:(BOOL)animated{
     [super viewWillDisappear:true];
-    
-    [_subFrames removeAllObjects];
-    [upIDs removeAllObjects];
-    [_subscriptionArry removeAllObjects];
 }
-
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
 
-- (void)getUpInfoFromNetwork{
-    //获取当前登录账户信息
-    TCUserInfoData *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
-    NSString* followID = profile.identifier;
-    
-    NSOperationQueue *queue = [[NSOperationQueue alloc] init];
-    queue.maxConcurrentOperationCount = 1;
-    
-    //请求1 获取被订阅者ID
-    NSBlockOperation *a = [NSBlockOperation blockOperationWithBlock:^{
-        dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-        [self getUpIDs:followID :upIDs :semaphore];
-        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-        
-    }];
-    
-    //请求二 根据被订阅者ID查询被订阅信息
-    NSBlockOperation *b = [NSBlockOperation blockOperationWithBlock:^{
-        if (upIDs.count) {
-            dispatch_semaphore_t sema = dispatch_semaphore_create(0);
-            [self getUpInfos:upIDs :_subscriptionArry :sema];
-            dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
+- (void)getUpIds {
+    [upIDs removeAllObjects];
+    TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+    upIDs = [[LCManager getUserSubscribeIds:profile.identifier] mutableCopy];
+    [[TIMFriendshipManager sharedInstance] GetFriendsProfile:upIDs succ:^(NSArray *friends) {
+        [_subscriptionArry removeAllObjects];
+        for (TIMUserProfile *user in friends) {
+            NSLog(@"user: %@", user.identifier);
+            [_subscriptionArry addObject:user];
         }
-        
+        [_dataTable reloadData];
+    } fail:^(int code, NSString *msg) {
+        NSLog(@"get users failed");
+        [_dataTable reloadData];
     }];
-    
-    //请求三更新UI
-    NSBlockOperation *c = [NSBlockOperation blockOperationWithBlock:^{
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self initData];
-            [self.dataTable reloadData];
-        });
-    }];
-    
-    //添加依赖与添加到队列中
-    [b addDependency:a];
-    [c addDependency:b];
-    [queue addOperation:a];
-    [queue addOperation:b];
-    [queue addOperation:c];
+}
+
+- (void)onClickCancelSubscribe:(NSString *)upId {
+    TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+    NSLog(@"click btn: %@", upId);
+    UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"提示"
+                                                                   message:@"确定取消订阅吗？"
+                                                            preferredStyle:UIAlertControllerStyleAlert];
+
+    UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"确定" style:UIAlertActionStyleDefault
+                                                          handler:^(UIAlertAction * action) {
+                                                              [LCManager cancelUser:profile.identifier followUp:upId];
+                                                              [self getUpIds];
+                                                              NSLog(@"action = %@", action);
+                                                          }];
+    UIAlertAction* cancelAction = [UIAlertAction actionWithTitle:@"取消" style:UIAlertActionStyleDefault
+                                                         handler:^(UIAlertAction * action) {
+                                                             //响应事件
+                                                             NSLog(@"action = %@", action);
+                                                         }];
+
+    [alert addAction:defaultAction];
+    [alert addAction:cancelAction];
+    [self presentViewController:alert animated:YES completion:nil];
 }
 
 
-//获取被订阅者的ID
-- (void)getUpIDs: (NSString *)followerID: (NSMutableArray*  ) upIDs :(dispatch_semaphore_t ) semaphore {
-    
-    AVQuery *query = [AVQuery queryWithClassName:@"subscription"];
-    
-    
-    [query whereKey:@"follower" equalTo:followerID];
-    
-    [query findObjectsInBackgroundWithBlock:^(NSArray *objects, NSError *error){
-        
-        for(AVObject *avObject in objects){
-            
-            NSString* upID = avObject[@"up"];
-            
-            [upIDs addObject:upID];
-            
-        }
-        
-        dispatch_semaphore_signal(semaphore);
-        
-    }];
-    
-}
-
-//获取被订阅信息
-- (void)getUpInfos: (NSMutableArray *)upIDs :(NSMutableArray *)up_infos:(dispatch_semaphore_t ) semaphore  {
-    AVQuery *query = [AVQuery queryWithClassName: @"up_info"];
-    dispatch_semaphore_signal(semaphore);
-    
-    for(NSString* upID in upIDs){
-        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-        @synchronized(self){
-            [query whereKey:@"up_id" equalTo:upID];
-            //获取query不为空的话
-            if (query.countObjects) {
-                [query getFirstObjectInBackgroundWithBlock:^(AVObject *object, NSError *error){
-                    NSString* upName = object[@"up_name"];
-                    NSString* photoURL = object[@"up_photo"];
-                    NSString* upRoomName = object[@"room_name"];
-                    NSString* className = NULL;
-                    
-                    NSArray *tempArr = [upRoomName componentsSeparatedByString:@";;;"];
-                    
-                    if (tempArr.count) {
-                        upRoomName = tempArr[0];
-                        className = tempArr[1];
-                    }
-                    
-                    NSDictionary* upInfo = [NSDictionary dictionaryWithObjectsAndKeys:
-                                            upName,@"name",
-                                            photoURL,@"imgUrl",
-                                            upRoomName,@"title",
-                                            className,@"class", nil];
-                    [up_infos addObject:upInfo];
-                    dispatch_semaphore_signal(semaphore);
-                }];
-                
-            }
-            else{
-                dispatch_semaphore_signal(semaphore);
-            }
-        }
-        
-        
-    }
-    
-    
-}
-
-
-- (void)initData{
-    
-    for(NSDictionary *dict in _subscriptionArry){
-        TCSubscribeFrame *sFrame = [[TCSubscribeFrame alloc]init];
-        sFrame.subscription = [TCSubscribeModel subWithDict:dict];
-        [_subFrames addObject:sFrame];
-    }
-    
-}
 
 -(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView{
     return 1;
 }
 
 -(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
-    
-    TCSubscribeTableViewCell* cell = [tableView dequeueReusableCellWithIdentifier:[TCSubscribeTableViewCell getID]];
-    
-    
-    if (cell == nil){
-        cell = [[TCSubscribeTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:[TCSubscribeTableViewCell getID]];
+    TCUserSubscribeCell *cell = [tableView dequeueReusableCellWithIdentifier:@"TCUserSubscribeCell"];
+    if (cell == nil) {
+        cell = [[TCUserSubscribeCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"TCUserSubscribeCell"];
     }
-    
-    
-    cell.subFrame = _subFrames[indexPath.row];
-    
+
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    cell.delegate = self;
+    cell.model = _subscriptionArry[(NSUInteger) indexPath.row];
+    NSLog(@"model user id: %@", cell.model.identifier);
     return cell;
 }
 
 - (NSInteger)tableView:(nonnull UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    
-    return _subFrames.count;
+    return _subscriptionArry.count;
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
-    return [_subFrames[indexPath.row] cellHeight];
+    return 60.0f;
 }
 
-/*
- #pragma mark - Navigation
- 
- // In a storyboard-based application, you will often want to do a little preparation before navigation
- - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
- // Get the new view controller using [segue destinationViewController].
- // Pass the selected object to the new view controller.
- }
- */
-
-//- (void)encodeWithCoder:(nonnull NSCoder *)aCoder {
-//    <#code#>
-//}
-//
-//- (void)didUpdateFocusInContext:(nonnull UIFocusUpdateContext *)context withAnimationCoordinator:(nonnull UIFocusAnimationCoordinator *)coordinator {
-//    <#code#>
-//}
-//
-//- (void)setNeedsFocusUpdate {
-//    <#code#>
-//}
-//
-//- (BOOL)shouldUpdateFocusInContext:(nonnull UIFocusUpdateContext *)context {
-//    <#code#>
-//}
-//
-//- (void)updateFocusIfNeeded {
-//    <#code#>
-//}
 
 @end
 

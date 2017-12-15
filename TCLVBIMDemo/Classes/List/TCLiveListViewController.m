@@ -21,6 +21,7 @@
 #import "TCLiveGroupViewController.h"
 #import "NSString+Common.h"
 #import "LCManager.h"
+#import "TCUserInfoModel.h"
 
 
 @interface TCLiveListViewController ()<UICollectionViewDelegate,UICollectionViewDataSource,
@@ -81,7 +82,7 @@
 //    [self initMainUIOld];
 //    [self setup:VideoType_VOD_SevenDay];
 
-    [self initBasicBalance];
+//    [self initBasicBalance];
     [self initMainUI];
     [self setupGestures];
     [self setup: VideoType_LIVE_Online];

@@ -54,7 +54,8 @@
     TCSubscribeModel* sub = _subFrame.subscription;
     
     subView = [[UIImageView alloc]init];
-    subView.image = [UIImage imageNamed:@"subView.png"];
+//    subView.image = [UIImage imageNamed:@"subView.png"];
+    subView.image = [UIImage imageNamed:@"bg.jpg"];
     [self.contentView addSubview:subView];
     
     

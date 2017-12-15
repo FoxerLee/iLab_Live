@@ -61,6 +61,21 @@
     return result.count;
 }
 
++ (NSArray<NSString*>*)getUserSubscribeIds: (NSString *)userId {
+    AVQuery *query = [AVQuery queryWithClassName:@"subscription"];
+
+    [query whereKey:@"follower" equalTo:userId];
+
+    NSArray *result = [query findObjects];
+
+    NSMutableArray *ids = [NSMutableArray array];
+    for (AVObject *object in result) {
+        [ids addObject:object[@"up"]];
+    }
+
+    return ids;
+}
+
 + (NSInteger)getUserFansCount:(NSString *)userId {
     AVQuery *query = [AVQuery queryWithClassName:@"subscription"];
 
@@ -69,6 +84,21 @@
     NSArray *result = [query findObjects];
 
     return result.count;
+}
+
++ (NSArray<NSString*>*)getUserFansIds: (NSString *)userId {
+    AVQuery *query = [AVQuery queryWithClassName:@"subscription"];
+
+    [query whereKey:@"up" equalTo:userId];
+
+    NSArray *result = [query findObjects];
+
+    NSMutableArray *ids = [NSMutableArray array];
+    for (AVObject *object in result) {
+        [ids addObject:object[@"follower"]];
+    }
+
+    return ids;
 }
 
 #pragma mark - About user balance
@@ -170,5 +200,73 @@
     }
 }
 
+#pragma mark - 礼物赠送与信息拉取
+
++ (void)sendGiftWithNum:(NSString *)senderId to:(NSString *)receiverId gift1: (NSInteger)num1 gift2: (NSInteger) num2
+                  gift3: (NSInteger) num3 gift4: (NSInteger) num4 gift5: (NSInteger) num5 gift6: (NSInteger)num6 {
+    AVObject *row = [AVObject objectWithClassName:@"gift_relation"];
+
+    [row setObject:senderId forKey:@"sender_id"];
+    [row setObject:receiverId forKey:@"receiver_id"];
+    [row setObject:@(num1) forKey:@"gift_1"];
+    [row setObject:@(num2) forKey:@"gift_2"];
+    [row setObject:@(num3) forKey:@"gift_3"];
+    [row setObject:@(num4) forKey:@"gift_4"];
+    [row setObject:@(num5) forKey:@"gift_5"];
+    [row setObject:@(num6) forKey:@"gift_6"];
+
+    [row save];
+}
+
++ (NSArray *)getGiftMessageArray: (NSString *)userId {
+    AVQuery *query = [AVQuery queryWithClassName:@"gift_relation"];
+
+    [query whereKey:@"receiver_id" equalTo:userId];
+
+    NSArray *result = [query findObjects];
+
+    NSMutableArray *giftMessageArray = [NSMutableArray array];
+    for (AVObject *object in result) {
+        NSString *giftName;
+        NSInteger giftNum = 0;
+        if ([object[@"gift_1"] intValue] > 0) {
+            giftName = @"棒棒糖";
+            giftNum = [object[@"gift_1"] intValue];
+        } else if ([object[@"gift_2"] intValue] > 0) {
+            giftName = @"生日蛋糕";
+            giftNum = [object[@"gift_2"] intValue];
+        } else if ([object[@"gift_3"] intValue] > 0) {
+            giftName = @"钻戒";
+            giftNum = [object[@"gift_3"] intValue];
+        } else if ([object[@"gift_4"] intValue] > 0) {
+            giftName = @"跑车";
+            giftNum = [object[@"gift_4"] intValue];
+        } else if ([object[@"gift_5"] intValue] > 0) {
+            giftName = @"豪华游艇";
+            giftNum = [object[@"gift_5"] intValue];
+        } else if ([object[@"gift_6"] intValue] > 0) {
+            giftName = @"火箭";
+            giftNum = [object[@"gift_6"] intValue];
+        }
+        NSString *senderId = object[@"sender_id"];
+        NSDictionary *giftMessage = @{
+                @"giftName": giftName,
+                @"giftNumber": @(giftNum),
+                @"senderId": senderId
+        };
+        [giftMessageArray addObject:giftMessage];
+    }
+    return giftMessageArray;
+}
+
++ (BOOL)deleteAllGiftMessage: (NSString *)userId {
+    AVQuery *query = [AVQuery queryWithClassName:@"gift_relation"];
+
+    [query whereKey:@"receiver_id" equalTo:userId];
+
+    NSArray *result = [query findObjects];
+
+    return [AVObject deleteAll:result];
+}
 
 @end

@@ -18,11 +18,8 @@
  * 页面上只有一个tableview控件
  */
 
-@interface TCViewHistoryViewController : UIViewController<UITableViewDelegate, UITableViewDataSource>
+@interface TCViewHistoryViewController : UIViewController
 
-@property (strong, nonatomic) UITableView      *tableView;
-
-@property (strong, nonatomic) NSMutableArray   *userInfoArry;
 
 @end
 

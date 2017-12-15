@@ -173,15 +173,21 @@
             if (query.countObjects) {
                 [query getFirstObjectInBackgroundWithBlock:^(AVObject *object, NSError *error){
                     NSString* upName = object[@"up_name"];
-                    NSString* photoURL = object[@"up_photo"];
+                    NSString* photoURL = object[@"room_cover"];
                     NSString* upRoomName = object[@"room_name"];
                     NSString* className = NULL;
                     
                     NSArray *tempArr = [upRoomName componentsSeparatedByString:@";;;"];
 
-                    if (tempArr.count) {
+                    if (tempArr.count == 2) {
                         upRoomName = tempArr[0];
                         className = tempArr[1];
+                    } else if (tempArr.count == 1) {
+                        upRoomName = tempArr[0];
+                        className = @"";
+                    } else {
+                        upRoomName = @"";
+                        className = @"";
                     }
                     
                     NSDictionary* upInfo = @{@"name": upName,

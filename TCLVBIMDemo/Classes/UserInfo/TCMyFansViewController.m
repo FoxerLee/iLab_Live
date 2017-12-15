@@ -19,108 +19,123 @@
 #import <AVFoundation/AVFoundation.h>
 #import "UIActionSheet+BlocksKit.h"
 
-#define OPEN_CAMERA  0
-#define OPEN_PHOTO   1
+#import "TCMyFansViewController.h"
+#import "TCUserInfoCell.h"
+#import "TCUserSubscribeCell.h"
+#import "LCManager.h"
+
+
+@interface TCMyFansViewController ()<TCUserSubscribeCellDelegate>{
+    NSMutableArray* fansIds;
+}
+@end
+
+
 
 @implementation TCMyFansViewController
 
-
-- (void)viewDidLoad
-{
+- (void)viewDidLoad {
     [super viewDidLoad];
-    UIColor *textColour = [UIColor colorWithRed:36/255.0 green:203/255.0 blue:173/255.0 alpha:1];
-    self.navigationController.navigationBar.tintColor    = textColour;
-    self.navigationItem.title = @"我的粉丝";
-    [self.navigationController.navigationBar setTitleTextAttributes:@{NSFontAttributeName:[UIFont systemFontOfSize:18],NSForegroundColorAttributeName:[UIColor blackColor]}] ;
-    
-    self.view.backgroundColor = RGB(0xF3,0xF3,0xF3);
-    
-    
-    NSInteger nHeighNavigationBar = self.navigationController.navigationBar.frame.size.height;
-    NSInteger nStatusBarFrame     =[[UIApplication sharedApplication] statusBarFrame].size.height;
-    CGRect tableViewFrame  = CGRectMake(0, nHeighNavigationBar+nStatusBarFrame+20, self.view.frame.size.width, 155);
-    _tableView    = [[UITableView alloc] initWithFrame:tableViewFrame style:UITableViewStylePlain];
+    // Do any additional setup after loading the view.
+
+    self.title = @"我的粉丝";
+
+    [self initData];
+
+    _tableView = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, self.view.width, self.view.height-30) style:UITableViewStylePlain];
+
+    _tableView.delegate = self;
     _tableView.dataSource = self;
-    _tableView.delegate   = self;
-    [_tableView setSeparatorColor:RGB(0xD8,0xD8,0xD8)];
-    
-    //设置tableView不能滚动
-    [self.tableView setScrollEnabled:NO];
-    
-    //去掉多余的分割线
-    [self setExtraCellLineHidden:self.tableView];
+
+    _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+
     [self.view addSubview:_tableView];
-    
-    self.automaticallyAdjustsScrollViewInsets = NO;
-    // 点击空白处键盘消失
-    self.view.userInteractionEnabled = YES;
-    UITapGestureRecognizer *singleTap = [[UITapGestureRecognizer alloc] initWithTarget:self action:@selector(closeKeyboard:)];
-    singleTap.cancelsTouchesInView = NO;
-    [self.view addGestureRecognizer:singleTap];
-    return;
 }
 
+- (void)initData {
+    fansIds = [NSMutableArray array];
+    _userInfoArray = [NSMutableArray array];
+}
 
--(void)viewWillAppear:(BOOL)animated
-{
-    [super viewWillAppear:animated];
+- (void)viewWillAppear:(BOOL)animated{
+    [super viewWillAppear:true];
     [self.navigationController setNavigationBarHidden:NO];
+    [self getFansIds];
 }
-#pragma mark 绘制view
-/**
- *  用于去掉界面上多余的横线
- *
- *  @param tableView 无意义
- */
--(void)setExtraCellLineHidden: (UITableView *)tableView
-{
-    UIView *view = [UIView new];
-    view.backgroundColor = [UIColor clearColor];
-    [_tableView setTableFooterView:view];
+- (void)viewWillDisappear:(BOOL)animated{
+    [super viewWillDisappear:true];
 }
-//获取需要绘制的cell数目
-- (NSInteger)tableView:(UITableView *)tableView numberOfRowsInSection:(NSInteger)section
-{
-    return _userInfoArry.count;
+- (void)didReceiveMemoryWarning {
+    [super didReceiveMemoryWarning];
+    // Dispose of any resources that can be recreated.
 }
-//获取需要绘制的cell高度
-- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    TCUserInfoCellItem *item = _userInfoArry[indexPath.row];
-    return [TCUserInfoCellItem heightOf:item];
+
+- (void)getFansIds {
+    [fansIds removeAllObjects];
+    [_userInfoArray removeAllObjects];
+    TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+    fansIds = [[LCManager getUserFansIds:profile.identifier] mutableCopy];
+    [[TIMFriendshipManager sharedInstance] GetFriendsProfile:fansIds succ:^(NSArray *friends) {
+        for (TIMUserProfile *user in friends) {
+            NSLog(@"user: %@", user.identifier);
+            [_userInfoArray addObject:user];
+        }
+        [_tableView reloadData];
+    } fail:^(int code, NSString *msg) {
+        NSLog(@"get users failed");
+    }];
 }
-//绘制cell
-- (UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    TCEditUserInfoTableViewCell *cell = [tableView dequeueReusableCellWithIdentifier:@"cell"];
-    //    TCUserInfoCellItem *item = _userInfoArry[indexPath.row];
-    //    if (!cell)
-    //    {
-    //        cell = [[TCEditUserInfoTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"cell"];
-    //        [cell initUserinfoViewCellData:item];
-    //    }
-    //
-    //    [cell drawRichCell:item delegate:self];
+
+- (void)onClickCancelSubscribe:(NSString *)upId {
+//    TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+    NSLog(@"click btn: %@", upId);
+//    UIAlertController* alert = [UIAlertController alertControllerWithTitle:@"提示"
+//                                                                   message:@"确定取消订阅吗？"
+//                                                            preferredStyle:UIAlertControllerStyleAlert];
+//
+//    UIAlertAction* defaultAction = [UIAlertAction actionWithTitle:@"是" style:UIAlertActionStyleDefault
+//                                                          handler:^(UIAlertAction * action) {
+//                                                              [LCManager cancelUser:profile.identifier followUp:upId];
+//                                                              [self getFansIds];
+//                                                              NSLog(@"action = %@", action);
+//                                                          }];
+//    UIAlertAction* cancelAction = [UIAlertAction actionWithTitle:@"否" style:UIAlertActionStyleDefault
+//                                                         handler:^(UIAlertAction * action) {
+//                                                             //响应事件
+//                                                             NSLog(@"action = %@", action);
+//                                                         }];
+//
+//    [alert addAction:defaultAction];
+//    [alert addAction:cancelAction];
+//    [self presentViewController:alert animated:YES completion:nil];
+}
+
+
+
+-(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView{
+    return 1;
+}
+
+-(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
+    TCUserSubscribeCell *cell = [tableView dequeueReusableCellWithIdentifier:@"TCUserSubscribeCell"];
+    if (cell == nil) {
+        cell = [[TCUserSubscribeCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"TCUserSubscribeCell"];
+    }
+
+    cell.selectionStyle = UITableViewCellSelectionStyleNone;
+    cell.model = _userInfoArray[(NSUInteger) indexPath.row];
+    cell.cellType = TCUserSubscribeCellTypeFans;
+    NSLog(@"model user id: %@", cell.model.identifier);
     return cell;
 }
 
-
-/**
- *  用户点击tableview上的cell后,找到对应的回到函数并执行
- *
- *  @param tableView 对应的tableview
- *  @param indexPath 对应的cell索引
- */
--(void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath
-{
-    //    TCUserInfoCellItem *item = _userInfoArry[indexPath.row];
-    //    UITableViewCell *cell = [tableView cellForRowAtIndexPath:indexPath];
-    //    if (item.action)
-    //    {
-    //        item.action(item, cell);
-    //    }
-    //
-    //    [tableView deselectRowAtIndexPath:indexPath animated:NO];
+- (NSInteger)tableView:(nonnull UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
+    return _userInfoArray.count;
 }
+
+- (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
+    return 60.0f;
+}
+
 
 @end

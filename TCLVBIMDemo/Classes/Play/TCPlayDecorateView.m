@@ -690,10 +690,35 @@
 
     NSLog(@"send gift name: %@, number: %d", giftName, number);
     [self sendGift:giftName number:number];
+    [self addSendMessage:giftName andCount:number];
     LiveGiftShowModel *model = [LiveGiftShowModel giftModel:self.giftArr[(NSUInteger) _giftPickerView.pickedIndex] userModel:self.userModel];
     model.toNumber = (NSUInteger) number;
     [self.customGiftShow animatedWithGiftModel:model];
     [self giftAnimate:giftName];
+}
+
+- (void)addSendMessage:(NSString *)giftName andCount: (NSInteger)number {
+    TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+
+    if ([giftName equalsString:@"棒棒糖"]) {
+        [LCManager sendGiftWithNum:profile.identifier to:_liveInfo.userid
+                             gift1:number gift2:nil gift3:nil gift4:nil gift5:nil gift6:nil];
+    } else if ([giftName equalsString:@"生日蛋糕"]) {
+        [LCManager sendGiftWithNum:profile.identifier to:_liveInfo.userid
+                             gift1:nil gift2:number gift3:nil gift4:nil gift5:nil gift6:nil];
+    } else if ([giftName equalsString:@"钻戒"]) {
+        [LCManager sendGiftWithNum:profile.identifier to:_liveInfo.userid
+                             gift1:nil gift2:nil gift3:number gift4:nil gift5:nil gift6:nil];
+    } else if ([giftName equalsString:@"跑车"]) {
+        [LCManager sendGiftWithNum:profile.identifier to:_liveInfo.userid
+                             gift1:nil gift2:nil gift3:nil gift4:number gift5:nil gift6:nil];
+    } else if ([giftName equalsString:@"豪华游艇"]) {
+        [LCManager sendGiftWithNum:profile.identifier to:_liveInfo.userid
+                             gift1:nil gift2:nil gift3:nil gift4:nil gift5:number gift6:nil];
+    } else if ([giftName equalsString:@"火箭"]) {
+        [LCManager sendGiftWithNum:profile.identifier to:_liveInfo.userid
+                             gift1:nil gift2:nil gift3:nil gift4:nil gift5:nil gift6:number];
+    }
 }
 
 - (void)giftNumberChanged:(UITextField *)textField{

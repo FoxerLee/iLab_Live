@@ -19,6 +19,7 @@
 #import <QBImagePickerController/QBImagePickerController.h>
 #import "TXVideoLoadingController.h"
 #import "TCSubscribeViewController.h"
+#import "TCMessageViewController.h"
 
 #define BOTTOM_VIEW_HEIGHT              225
 
@@ -71,7 +72,7 @@ typedef enum : NSUInteger {
 
     //TODO: 替换v1 v2两个 UIViewController
     UIViewController *v1 = [TCSubscribeViewController new];
-    UIViewController *v2 = [UIViewController new];
+    UIViewController *v2 = [TCMessageViewController new];
     UIViewController *_ = [UIViewController new];
     UIViewController *v3 = [TCUserInfoViewController new];
     self.viewControllers = @[_showVC,v1, _, v2, v3];
