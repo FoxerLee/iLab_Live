@@ -12,6 +12,8 @@
 
 @property (nonatomic, strong) UILabel *msgLabel;
 
+@property (nonatomic, strong) UILabel *dateTimeLabel;
+
 @end
 
 
@@ -26,6 +28,7 @@
 }
 
 - (void)initUI {
+    CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
     UIImageView *sysImage = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"system_msg"]];
     sysImage.frame = CGRectMake(15, 10, 50, 50);
     [self addSubview:sysImage];
@@ -36,17 +39,30 @@
     titleLabel.text = @"系统消息";
     [self addSubview:titleLabel];
 
+    _dateTimeLabel = [[UILabel alloc] init];
+    _dateTimeLabel.frame = CGRectMake(screenWidth - 160, titleLabel.frame.origin.y, 140, 20);
+    _dateTimeLabel.font = [UIFont systemFontOfSize:12];
+//    _dateTimeLabel.backgroundColor = [UIColor grayColor];
+    _dateTimeLabel.textColor = [UIColor grayColor];
+    _dateTimeLabel.text = @"2017年12月16日 23:25";
+    _dateTimeLabel.textAlignment = NSTextAlignmentRight;
+    [self addSubview:_dateTimeLabel];
+
     _msgLabel = [[UILabel alloc] init];
     _msgLabel.frame = CGRectMake(titleLabel.frame.origin.x, CGRectGetMaxY(titleLabel.frame), 200, 30);
     _msgLabel.font = [UIFont systemFontOfSize:14];
     _msgLabel.textColor = [UIColor darkGrayColor];
-    _msgLabel.text = @"fafafa送了你20个火箭";
+    _msgLabel.text = @"iLab送了你1个火箭";
     [self addSubview:_msgLabel];
 
 }
 
 - (void)setMessage:(NSString *)message {
     _msgLabel.text = message;
+}
+
+- (void)setDateTime:(NSString *)dateTime {
+    _dateTimeLabel.text = dateTime;
 }
 
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated {

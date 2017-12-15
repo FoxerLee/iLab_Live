@@ -11,19 +11,25 @@
 @implementation TCSubscribeModel
 
 
--(id) initWithDict:(NSDictionary *)dict{
-    if (self == [super init]) {
-        self.subHeadImageUrl = dict[@"imgUrl"];
-        self.subTitle = dict[@"title"];
-        self.subName = dict[@"name"];
-        self.subTimes = [dict[@"times"] integerValue];
-        self.subClass = dict[@"class"];
+- (TCSubscribeModel *)initWithLiveTitle: (NSString *)title upName:(NSString *)upName upId:(NSString *)upId
+                               liveType:(NSString *)type liveCover:(NSString *)cover liveViews:(NSInteger)views {
+    self = [super init];
+    if (self) {
+        self.upId = upId;
+        self.liveTitle = title;
+        self.upName = upName;
+        self.liveType = type;
+        self.liveCover = cover;
+        self.liveViews = views;
     }
     return self;
 }
 
-+(id) subWithDict:(NSDictionary *)dict{
-    return [[self alloc] initWithDict:dict];
++ (TCSubscribeModel *)initWithLiveTitle: (NSString *)title upName:(NSString *)upName upId:(NSString *)upId
+                               liveType:(NSString *)type liveCover:(NSString *)cover liveViews:(NSInteger)views {
+    TCSubscribeModel *model = [[TCSubscribeModel alloc] initWithLiveTitle:title upName:upName upId:upId
+                                                                 liveType:type liveCover:cover liveViews:views];
+    return model;
 }
 
 

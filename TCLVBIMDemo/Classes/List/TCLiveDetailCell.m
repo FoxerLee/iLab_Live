@@ -7,6 +7,7 @@
 //
 
 #import "TCLiveDetailCell.h"
+#import "UIImageView+WebCache.h"
 
 @interface TCLiveDetailCell()
 
@@ -104,6 +105,8 @@
     if (_model != model) {
         _model = model;
     }
+    [_frontCover sd_setImageWithURL:[NSURL URLWithString:[TCUtil transImageURL2HttpsURL:model.userinfo.frontcover]]
+                   placeholderImage:[UIImage imageNamed:@"bg.jpg"]];
     _titleLabel.text = model.title;
     _hostNameLabel.text = model.userinfo.nickname;
     _viewNumLabel.text = [NSString stringWithFormat:@"%d",  model.viewercount];

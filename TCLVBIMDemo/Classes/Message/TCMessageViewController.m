@@ -35,7 +35,14 @@
 - (void)viewWillAppear:(BOOL)animated {
     [super viewWillAppear:animated];
 
-    [self getData];
+    _nullDataView.hidden = _msgArray.count != 0;
+    dispatch_async(dispatch_get_global_queue(0, 0), ^{
+        [self getData];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            _nullDataView.hidden = _msgArray.count != 0;
+            [_tableView reloadData];
+        });
+    });
 }
 
 - (void)initData {
@@ -49,8 +56,6 @@
     for (NSDictionary *dict in _msgArray) {
         NSLog(@"giftName: %@, giftNumber: %d, senderid: %@", dict[@"giftName"], [dict[@"giftNumber"] intValue], dict[@"senderId"]);
     }
-    [_tableView reloadData];
-    _nullDataView.hidden = _msgArray.count != 0;
 }
 
 - (void)initUI {
@@ -141,6 +146,11 @@
     }
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
     NSDictionary *giftMsg = _msgArray[indexPath.row];
+    NSDate *date = giftMsg[@"dateTime"];
+    NSDateFormatter *formatter = [[NSDateFormatter alloc] init];
+    formatter.dateFormat = @"yyyy年MM月dd日 HH:mm";
+    NSString *dateTime = [formatter stringFromDate:date];
+    cell.dateTime = dateTime;
     cell.message = [NSString stringWithFormat:@"%@送给你%d个%@", giftMsg[@"senderId"], [giftMsg[@"giftNumber"] intValue], giftMsg[@"giftName"]];
     return cell;
 }

@@ -9,21 +9,23 @@
 #import "TCSubscribeViewController.h"
 #import "TCSubscribeTableViewCell.h"
 #import "TCSubscribeModel.h"
-#import "TCSubscribeFrame.h"
 #import "TCUserInfoModel.h"
 #import "TCLiveListModel.h"
 #import "TCPlayViewController.h"
 #import "TCPlayViewController_LinkMic.h"
+#import "LCManager.h"
 
 
 @interface TCSubscribeViewController (){
-    NSMutableArray *_subFrames;
-    NSMutableArray* upIDs;
+    NSMutableArray   *_upInfoList;
+    NSArray          *upIds;
     UIView *_nullDataView;
     NSMutableArray *_liveList;
 }
 
 @property(nonatomic,retain) TCPlayViewController *playVC;
+
+@property (nonatomic, strong) UITableView *tableView;
 
 @end
 
@@ -35,55 +37,38 @@
 
 - (void)viewDidLoad {
     [super viewDidLoad];
-    // Do any additional setup after loading the view.
-    
-     _subFrames = [NSMutableArray array];
-    
-    //用于存储被订阅者id
-     upIDs = [NSMutableArray array];
-    
-    _subscriptionArry = [NSMutableArray array];
-    
+
+    self.title = @"订阅";
+
     [self initData];
-
-    _dataTable = [[UITableView alloc] initWithFrame:CGRectMake(0, 0, 340, 600) style:UITableViewStylePlain];
-    
-    
-    _dataTable.delegate = self;
-    _dataTable.dataSource = self;
-    
-    _dataTable.separatorStyle = UITableViewCellSeparatorStyleNone;
-    
-    [self.view addSubview:_dataTable];
-
+    [self initUI];
     [self initNullView];
-    
-    //从leancloud端获取数据
-    //[self getUpInfoFromNetwork];
-    
-    
 }
 
 - (void)viewWillAppear:(BOOL)animated{
     [super viewWillAppear:true];
 
     [self.navigationController setNavigationBarHidden:NO];
-    self.title = @"订阅";
 
     if ([self.delegate respondsToSelector:@selector(getLiveList)]) {
         _liveList = [self.delegate getLiveList];
     }
-    NSLog(@"%d", _liveList.count);
-    
-    [self getUpInfoFromNetwork];
+
+    _nullDataView.hidden = _upInfoList.count != 0;
+
+    dispatch_async(dispatch_get_global_queue(0, 0), ^{
+        [_upInfoList removeAllObjects];
+        [self getUpInfos];
+        dispatch_async(dispatch_get_main_queue(), ^{
+            _nullDataView.hidden = _upInfoList.count != 0;
+            [_tableView reloadData];
+        });
+    });
+
 }
 
 - (void)viewWillDisappear:(BOOL)animated{
     [super viewWillDisappear:true];
-    
-    [_subFrames removeAllObjects];
-    [upIDs removeAllObjects];
-    [_subscriptionArry removeAllObjects];
 }
 
 - (void)viewDidDisappear:(BOOL)animated {
@@ -94,7 +79,58 @@
 
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
-    // Dispose of any resources that can be recreated.
+}
+
+- (void)initData {
+    _upInfoList = [NSMutableArray array];
+    _liveList = [NSMutableArray array];
+}
+
+- (void)getUpInfos {
+    TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+    upIds = [LCManager getUserSubscribeIds:profile.identifier];
+
+    for (NSString *id in upIds) {
+        NSDictionary *dict = [LCManager getUpInfo:id];
+        if (dict != nil) {
+            NSString *upName = dict[@"up_name"];
+            NSString *totalTitle = dict[@"room_name"];
+            NSString *roomCover = dict[@"room_cover"];
+
+            NSArray *separateArray = [totalTitle componentsSeparatedByString:@";;;"];
+            NSString *typeName = @"";
+            NSString *trueTitle = @"";
+            if (separateArray.count > 2) {
+                trueTitle = separateArray[0];
+                for (int i = 0; i < separateArray.count - 1; i++) {
+                    trueTitle = [NSString stringWithFormat:@"%@;;;%@", trueTitle, separateArray[i]];
+                }
+                typeName = separateArray[separateArray.count-1];
+            } else if (separateArray.count == 1) {
+                trueTitle = separateArray[0];
+                typeName = @"游戏";
+            } else {
+                trueTitle = separateArray[0];
+                typeName = separateArray[1];
+            }
+
+            TCSubscribeModel *model = [TCSubscribeModel initWithLiveTitle:trueTitle upName:upName upId:id
+                                                                 liveType:typeName liveCover:roomCover liveViews:nil];
+
+            [_upInfoList addObject:model];
+        }
+    }
+
+}
+
+- (void)initUI {
+    _tableView = [[UITableView alloc] init];
+    _tableView.frame = CGRectMake(0, 0, self.view.width, self.view.height - 30);
+    _tableView.separatorStyle = UITableViewCellSeparatorStyleNone;
+    _tableView.dataSource = self;
+    _tableView.delegate = self;
+
+    [self.view addSubview:_tableView];
 }
 
 - (void)initNullView {
@@ -115,166 +151,33 @@
     [self.view addSubview:_nullDataView];
 }
 
-- (void)getUpInfoFromNetwork{
-    //获取当前登录账户信息
-    TCUserInfoData *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
-    NSString* followID = profile.identifier;
-    
-    NSOperationQueue *queue = [[NSOperationQueue alloc] init];
-    queue.maxConcurrentOperationCount = 1;
-    
-    //请求1 获取被订阅者ID
-    NSBlockOperation *a = [NSBlockOperation blockOperationWithBlock:^{
-        dispatch_semaphore_t semaphore = dispatch_semaphore_create(0);
-        [self getUpIDs:followID :upIDs :semaphore];
-        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-        
-    }];
-    
-    //请求二 根据被订阅者ID查询被订阅信息
-    NSBlockOperation *b = [NSBlockOperation blockOperationWithBlock:^{
-        if (upIDs.count) {
-            dispatch_semaphore_t sema = dispatch_semaphore_create(0);
-            [self getUpInfos:upIDs :_subscriptionArry :sema];
-            dispatch_semaphore_wait(sema, DISPATCH_TIME_FOREVER);
-        }
-        
-    }];
-    
-    //请求三更新UI
-    NSBlockOperation *c = [NSBlockOperation blockOperationWithBlock:^{
-        dispatch_async(dispatch_get_main_queue(), ^{
-            [self initData];
-            [self.dataTable reloadData];
-            _nullDataView.hidden = _subscriptionArry.count != 0;
-        });
-    }];
-    
-    //添加依赖与添加到队列中
-    [b addDependency:a];
-    [c addDependency:b];
-    [queue addOperation:a];
-    [queue addOperation:b];
-    [queue addOperation:c];
-}
-
-
-//获取被订阅者的ID
-- (void)getUpIDs: (NSString *)followerID: (NSMutableArray*  ) upIDs :(dispatch_semaphore_t ) semaphore {
-    
-    AVQuery *query = [AVQuery queryWithClassName:@"subscription"];
-    
-    
-    [query whereKey:@"follower" equalTo:followerID];
-    
-    [query findObjectsInBackgroundWithBlock:^(NSArray *objects, NSError *error){
-        
-        for(AVObject *avObject in objects){
-            
-            NSString* upID = avObject[@"up"];
-            
-            [upIDs addObject:upID];
-            
-        }
-        
-        dispatch_semaphore_signal(semaphore);
-        
-    }];
-    
-}
-
-//获取被订阅信息
-- (void)getUpInfos: (NSMutableArray *)upIDs :(NSMutableArray *)up_infos:(dispatch_semaphore_t ) semaphore  {
-    AVQuery *query = [AVQuery queryWithClassName: @"up_info"];
-    dispatch_semaphore_signal(semaphore);
-    
-    for(NSString* upID in upIDs){
-        dispatch_semaphore_wait(semaphore, DISPATCH_TIME_FOREVER);
-        @synchronized(self){
-            [query whereKey:@"up_id" equalTo:upID];
-            //获取query不为空的话
-            if (query.countObjects) {
-                [query getFirstObjectInBackgroundWithBlock:^(AVObject *object, NSError *error){
-                    NSString* upName = object[@"up_name"];
-                    NSString* photoURL = object[@"room_cover"];
-                    NSString* upRoomName = object[@"room_name"];
-                    NSString* className = NULL;
-                    
-                    NSArray *tempArr = [upRoomName componentsSeparatedByString:@";;;"];
-
-                    if (tempArr.count == 2) {
-                        upRoomName = tempArr[0];
-                        className = tempArr[1];
-                    } else if (tempArr.count == 1) {
-                        upRoomName = tempArr[0];
-                        className = @"";
-                    } else {
-                        upRoomName = @"";
-                        className = @"";
-                    }
-                    if (photoURL == nil) {
-                        photoURL = @"";
-                    }
-                    NSDictionary* upInfo = @{@"name": upName,
-                            @"imgUrl": photoURL,
-                            @"title": upRoomName,
-                            @"class": className};
-                    [up_infos addObject:upInfo];
-                    dispatch_semaphore_signal(semaphore);
-                }];
-                
-            }
-            else{
-                dispatch_semaphore_signal(semaphore);
-            }
-        }
-        
-        
-    }
-    
-    
-}
-
-
-- (void)initData{
-    
-    for(NSDictionary *dict in _subscriptionArry){
-        TCSubscribeFrame *sFrame = [[TCSubscribeFrame alloc]init];
-        sFrame.subscription = [TCSubscribeModel subWithDict:dict];
-        [_subFrames addObject:sFrame];
-    }
-    
-}
 
 -(NSInteger)numberOfSectionsInTableView:(UITableView *)tableView{
     return 1;
 }
 
 -(UITableViewCell *)tableView:(UITableView *)tableView cellForRowAtIndexPath:(NSIndexPath *)indexPath{
-    
-    TCSubscribeTableViewCell* cell = [tableView dequeueReusableCellWithIdentifier:[TCSubscribeTableViewCell getID]];
-    
-    
+    TCSubscribeTableViewCell* cell = [tableView dequeueReusableCellWithIdentifier:@"TCSubscribeTableViewCell"];
     if (cell == nil){
-        cell = [[TCSubscribeTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:[TCSubscribeTableViewCell getID]];
+        cell = [[TCSubscribeTableViewCell alloc] initWithStyle:UITableViewCellStyleDefault reuseIdentifier:@"TCSubscribeTableViewCell"];
     }
-    
-    
-    cell.subFrame = _subFrames[indexPath.row];
-    
+
+    if (_upInfoList.count != 0) {
+        cell.model = _upInfoList[(NSUInteger) indexPath.row];
+    }
     cell.selectionStyle = UITableViewCellSelectionStyleNone;
     return cell;
 }
 
 - (NSInteger)tableView:(nonnull UITableView *)tableView numberOfRowsInSection:(NSInteger)section {
-    
-    return _subFrames.count;
+    return _upInfoList.count;
 }
 
 - (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
     TCLiveInfo *liveInfo;
     for (TCLiveInfo *live in _liveList) {
-        if ([live.userid isEqualToString:upIDs[indexPath.row]]) {
+        TCSubscribeModel *model = _upInfoList[(NSUInteger) indexPath.row];
+        if ([live.userid isEqualToString:model.upId]) {
             liveInfo = live;
             break;
         }
@@ -295,7 +198,10 @@
 }
 
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
-    return [_subFrames[indexPath.row] cellHeight];
+    CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+    CGFloat padding = 15;
+    CGFloat cellHeight = (screenWidth - 2*padding)/2 * 9/16 + padding;
+    return cellHeight;
 }
 
 - (void)playError:(NSNotification *)noti {

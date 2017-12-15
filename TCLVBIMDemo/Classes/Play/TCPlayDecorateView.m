@@ -149,7 +149,7 @@
         _btnShare.center = CGPointMake(_closeBtn.center.x - icon_center_interval, icon_center_y);
         _btnShare.bounds = CGRectMake(0, 0, icon_size, icon_size);
         [_btnShare setImage:[UIImage imageNamed:@"share_new"] forState:UIControlStateNormal];
-        [_btnShare addTarget:self action:@selector(clickShare:) forControlEvents:UIControlEventTouchUpInside];
+//        [_btnShare addTarget:self action:@selector(clickShare:) forControlEvents:UIControlEventTouchUpInside];
         [self addSubview:_btnShare];
 
         _btnRecord = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -674,9 +674,10 @@
     TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
     [LCManager decreaseUser:profile.identifier Balance:price*number result:^(BOOL succeeded, NSError *error) {
         if (succeeded) {
+            [self handleGiftSend:giftName andCount:number];
             [LCManager increaseUser:_liveInfo.userid Balance:price*number result:^(BOOL succeeded, NSError *error) {
                 if (succeeded) {
-                    [self handleGiftSend:giftName andCount:number];
+
                 }
             }];
         }

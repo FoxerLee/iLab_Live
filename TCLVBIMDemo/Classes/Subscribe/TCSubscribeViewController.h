@@ -15,15 +15,8 @@
 @end
 
 
-typedef void(^Complete)();
-
 @interface TCSubscribeViewController: UIViewController<UITableViewDelegate, UITableViewDataSource>
 
-@property (strong, nonatomic) UITableView *dataTable;
-
-@property (strong, nonatomic) NSMutableArray *subscriptionArry;
-
-@property (copy, nonatomic) Complete complete;
 
 @property (nonatomic, weak) id<TCSubscribeViewControllerDelegate> delegate;
 

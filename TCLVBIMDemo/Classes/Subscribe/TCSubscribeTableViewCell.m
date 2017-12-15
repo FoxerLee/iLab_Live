@@ -7,25 +7,16 @@
 //
 
 #import "TCSubscribeTableViewCell.h"
-#import "TCSubscribeFrame.h"
 #import "TCSubscribeModel.h"
 #import "UIImageView+WebCache.h"
 
-#define lblWidth 50
-#define lblHeight 10
-
-#define Border 13
-#define FONTSIZE 13
-#define LARGE_FONTSIZE 15
-#define IMG_WIDTH 180
-#define LIST_TO_TOP 58
 
 @implementation TCSubscribeTableViewCell{
-    UIImageView* subView;
-    UILabel* subTitle;
-    UILabel* subName;
-    UILabel* subWatch;
-    UILabel* subClass;
+    UIImageView*    _liveCoverView;
+    UILabel*        _titleLabel;
+    UILabel*        _upNameLabel;
+    UILabel*        _liveViewsLabel;
+    UILabel*        _liveTypeLabel;
     
 }
 
@@ -33,114 +24,78 @@
     self = [super initWithStyle:style reuseIdentifier:reuseIdentifier];
     
     if (self) {
-        [self setData];
-        [self setBaseItem];
-        [self setSubFrame:_subFrame];
-        
+        [self initUI];
     }
     
     return self;
     
 }
 
--(void)setSubFrame:(TCSubscribeFrame *)subframe{
-    _subFrame = subframe;
-    
-    [self settingSubData];
-    [self settingSubFrame];
-    
+- (void)initUI {
+    CGFloat screenWidth = [UIScreen mainScreen].bounds.size.width;
+    CGFloat padding = 15;
+    CGFloat titleFontSize = 16;
+    CGFloat contentFontSize = 13;
+    // 直播封面
+    _liveCoverView = [[UIImageView alloc] initWithImage:[UIImage imageNamed:@"bg.jpg"]];
+    _liveCoverView.frame = CGRectMake(padding, padding, (screenWidth-padding*2)/2, (screenWidth-padding*2)/2 * 9/16);
+    _liveCoverView.layer.cornerRadius = 3;
+//    _liveCoverView.contentMode = UIViewContentModeScaleAspectFit;
+    _liveCoverView.layer.masksToBounds = YES;
+    [self addSubview:_liveCoverView];
+
+    _titleLabel = [[UILabel alloc] init];
+    _titleLabel.frame = CGRectMake(CGRectGetMaxX(_liveCoverView.frame) + 5, _liveCoverView.frame.origin.y, (screenWidth -padding*2)/2-5 , 30);
+//    _titleLabel.backgroundColor = [UIColor grayColor];
+    _titleLabel.font = [UIFont systemFontOfSize:titleFontSize];
+    _titleLabel.text = @"测试";
+    [self addSubview:_titleLabel];
+
+    CGFloat tipWidth = 40;
+    CGFloat tipHeight = 20;
+
+    // 主播名
+    UILabel *liveTipLabel = [[UILabel alloc] init];
+    liveTipLabel.frame = CGRectMake(_titleLabel.frame.origin.x, CGRectGetMaxY(_titleLabel.frame) + 5, tipWidth, tipHeight);
+    liveTipLabel.textColor = [UIColor grayColor];
+    liveTipLabel.font = [UIFont systemFontOfSize:contentFontSize];
+    liveTipLabel.text = @"主播:";
+    [self addSubview:liveTipLabel];
+
+    CGFloat contentWidth = (screenWidth - padding*2)/2 - 5 - tipWidth;
+
+    _upNameLabel = [[UILabel alloc] init];
+    _upNameLabel.frame = CGRectMake(CGRectGetMaxX(liveTipLabel.frame), liveTipLabel.frame.origin.y, contentWidth, tipHeight);
+    _upNameLabel.font = [UIFont systemFontOfSize:contentFontSize];
+    _upNameLabel.textColor = [UIColor grayColor];
+    _upNameLabel.text = @"iLab";
+    [self addSubview:_upNameLabel];
+
+    // 直播类别
+    UILabel *liveTypeTip = [[UILabel alloc] init];
+    liveTypeTip.frame = CGRectMake(_titleLabel.frame.origin.x, CGRectGetMaxY(liveTipLabel.frame) + 5, tipWidth, tipHeight);
+    liveTypeTip.textColor = [UIColor grayColor];
+    liveTypeTip.font = [UIFont systemFontOfSize:contentFontSize];
+    liveTypeTip.text = @"分类:";
+    [self addSubview:liveTypeTip];
+
+    _liveTypeLabel = [[UILabel alloc] init];
+    _liveTypeLabel.frame = CGRectMake(CGRectGetMaxX(liveTypeTip.frame), liveTypeTip.frame.origin.y, contentWidth, tipHeight);
+    _liveTypeLabel.font = [UIFont systemFontOfSize:contentFontSize];
+    _liveTypeLabel.textColor = [UIColor grayColor];
+    _liveTypeLabel.text = @"游戏";
+    [self addSubview:_liveTypeLabel];
+
 }
 
--(void)settingSubData{
-    TCSubscribeModel* sub = _subFrame.subscription;
-    
-    subView = [[UIImageView alloc]init];
-//    subView.image = [UIImage imageNamed:@"subView.png"];
-//    [subView sd_setImageWithURL:[NSURL URLWithString:sub.subHeadImageUrl] placeholderImage:[UIImage imageNamed:@"bg.jpg"]];
-    [subView sd_setImageWithURL:[NSURL URLWithString:[TCUtil transImageURL2HttpsURL:sub.subHeadImageUrl]]
-               placeholderImage:[UIImage imageNamed:@"bg.jpg"]];
-
-    [self.contentView addSubview:subView];
-    
-    
-    subTitle.text = sub.subTitle;
-    
-    subTitle.font = [UIFont systemFontOfSize:LARGE_FONTSIZE];
-    
-    subName.text = sub.subName;
-    subName.font = [UIFont systemFontOfSize:FONTSIZE];
-    subName.textColor = [UIColor colorWithRed:125/255.f green:125/255.f blue:125/255.f alpha:1.0];
-    
-    subWatch.text = [NSString stringWithFormat:@"%ld",(long)sub.subTimes];
-    subWatch.font = [UIFont systemFontOfSize:FONTSIZE];
-    subWatch.textColor = [UIColor colorWithRed:125/255.f green:125/255.f blue:125/255.f alpha:1.0];
-    
-    subClass.text = sub.subClass;
-    subClass.font = [UIFont systemFontOfSize:FONTSIZE];
-    subClass.textColor = [UIColor colorWithRed:125/255.f green:125/255.f blue:125/255.f alpha:1.0];
+- (void)setModel:(TCSubscribeModel *)model {
+    [_liveCoverView sd_setImageWithURL:[NSURL URLWithString:[TCUtil transImageURL2HttpsURL:model.liveCover]]
+                      placeholderImage:[UIImage imageNamed:@"bg.jpg"]];
+    _titleLabel.text = model.liveTitle;
+    _upNameLabel.text = model.upName;
+    _liveTypeLabel.text = model.liveType;
 }
 
--(void)settingSubFrame{
-    subView.frame = _subFrame.viewFrame;
-    subTitle.frame = _subFrame.titleFrame;
-    subName.frame = _subFrame.nameFrame;
-    subWatch.frame = _subFrame.timeFrame;
-    subClass.frame = _subFrame.classFrame;
-}
-
--(void)setData{
-    subTitle = [[UILabel alloc]init];
-    [self.contentView addSubview:subTitle];
-    
-    subName = [[UILabel alloc]init];
-    [self.contentView addSubview:subName];
-    
-    subWatch = [[UILabel alloc]init];
-    //[self.contentView addSubview:subWatch];
-    
-    subClass = [[UILabel alloc]init];
-    [self.contentView addSubview:subClass];
-    
-}
-
-
--(void)setBaseItem{
-    CGFloat nameX = IMG_WIDTH + 2.3*Border;
-    CGFloat nameY = LIST_TO_TOP;
-    
-    _name = [[UILabel alloc] initWithFrame:CGRectMake(nameX, nameY, lblWidth, lblHeight)];
-    _name.font = [UIFont systemFontOfSize:FONTSIZE];
-    _name.textColor = [UIColor colorWithRed:125/255.f green:125/255.f blue:125/255.f alpha:1.0];
-    
-    [self.contentView addSubview:_name];
-    _name.text = @"主播：";
-    
-    
-    CGFloat watchX = nameX;
-    CGFloat wathcY = CGRectGetMaxY(_name.frame) + Border;
-    _watch = [[UILabel alloc] initWithFrame:CGRectMake(watchX, wathcY, lblWidth, lblHeight)];
-    //[self.contentView addSubview:_watch];
-    _watch.font = [UIFont systemFontOfSize:FONTSIZE];
-    _watch.textColor = [UIColor colorWithRed:125/255.f green:125/255.f blue:125/255.f alpha:1.0];
-    _watch.text = @"观看：";
-    
-    CGFloat classX = watchX;
-    CGFloat classY = CGRectGetMaxY(_watch.frame) + Border;
-    _sclass = [[UILabel alloc] initWithFrame:CGRectMake(classX, classY, lblWidth, lblHeight)];
-    [self.contentView addSubview:_sclass];
-    _sclass.font = [UIFont systemFontOfSize:FONTSIZE];
-    _sclass.textColor = [UIColor colorWithRed:125/255.f green:125/255.f blue:125/255.f alpha:1.0];
-    _sclass.text = @"分类：";
-}
-
-+(NSString *)getID{
-    return @"cell";
-}
-
-- (void)awakeFromNib {
-    [super awakeFromNib];
-    // Initialization code
-}
 
 - (void)setSelected:(BOOL)selected animated:(BOOL)animated {
     [super setSelected:selected animated:animated];

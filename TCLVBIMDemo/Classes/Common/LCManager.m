@@ -101,6 +101,27 @@
     return ids;
 }
 
++ (NSDictionary *)getUpInfo: (NSString *)upId {
+    NSDictionary *upInfo;
+    AVQuery *query = [AVQuery queryWithClassName:@"up_info"];
+
+    [query whereKey:@"up_id" equalTo:upId];
+
+    NSArray *result = [query findObjects];
+    if (result.count == 0) {
+        upInfo = nil;
+    } else {
+        AVObject *object = result[0];
+        upInfo = @{
+                @"room_cover": object[@"room_cover"],
+                @"up_name": object[@"up_name"],
+                @"up_photo": object[@"up_photo"],
+                @"room_name": object[@"room_name"]
+        };
+    }
+    return upInfo;
+}
+
 #pragma mark - About user balance
 
 + (NSInteger)getUserBalanceById:(NSString *)userId {
@@ -249,10 +270,12 @@
             giftNum = [object[@"gift_6"] intValue];
         }
         NSString *senderId = object[@"sender_id"];
+        NSDate *date = object.updatedAt;
         NSDictionary *giftMessage = @{
                 @"giftName": giftName,
                 @"giftNumber": @(giftNum),
-                @"senderId": senderId
+                @"senderId": senderId,
+                @"dateTime": date
         };
         [giftMessageArray addObject:giftMessage];
     }

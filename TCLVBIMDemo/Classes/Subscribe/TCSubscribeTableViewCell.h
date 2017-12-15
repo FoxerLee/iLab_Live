@@ -7,16 +7,11 @@
 //
 
 #import <UIKit/UIKit.h>
-@class TCSubscribeFrame;
+#import "TCSubscribeModel.h"
+
+
 @interface TCSubscribeTableViewCell : UITableViewCell
 
-//@property(nonatomic,strong) UIImageView *view;
-//@property(nonatomic,strong) UILabel* title;
-@property(nonatomic,strong) UILabel* name;
-@property(nonatomic,strong) UILabel* watch;
-@property(nonatomic,strong) UILabel* sclass;
+@property (nonatomic, strong) TCSubscribeModel *model;
 
-@property(nonatomic,strong) TCSubscribeFrame* subFrame;
-
- +(NSString *)getID;
 @end

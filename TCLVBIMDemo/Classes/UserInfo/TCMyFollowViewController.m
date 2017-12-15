@@ -69,6 +69,7 @@
         }
         [_dataTable reloadData];
     } fail:^(int code, NSString *msg) {
+        [_subscriptionArry removeAllObjects];
         NSLog(@"get users failed");
         [_dataTable reloadData];
     }];

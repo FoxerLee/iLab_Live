@@ -10,13 +10,16 @@
 
 @interface TCSubscribeModel : NSObject
 
-@property(nonatomic,retain)NSString *subTitle;        //订阅名
-@property(nonatomic,retain)NSString *subName;         //订阅主播名
-@property(nonatomic,retain)NSString *subClass;        //订阅分类
-@property(nonatomic,retain)NSString *subHeadImageUrl; //订阅头像url
-@property(nonatomic,assign)NSInteger subTimes;        //观看人次
+@property (nonatomic, strong) NSString *upId;          //主播id
+@property(nonatomic,retain)NSString *liveTitle;        //订阅直播名
+@property(nonatomic,retain)NSString *upName;           //订阅主播名
+@property(nonatomic,retain)NSString *liveType;         //订阅分类
+@property(nonatomic,retain)NSString *liveCover;        //封面url
+@property(nonatomic,assign)NSInteger liveViews;        //观看人次
 
--(id) initWithDict:(NSDictionary *)dict;
-+(id) subWithDict:(NSDictionary *)dict;
+- (TCSubscribeModel *)initWithLiveTitle: (NSString *)title upName:(NSString *)upName upId:(NSString *)upId
+                               liveType:(NSString *)type liveCover:(NSString *)cover liveViews:(NSInteger)views;
++ (TCSubscribeModel *)initWithLiveTitle: (NSString *)title upName:(NSString *)upName upId:(NSString *)upId
+                               liveType:(NSString *)type liveCover:(NSString *)cover liveViews:(NSInteger)views;
 
 @end

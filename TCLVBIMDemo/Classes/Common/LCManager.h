@@ -21,6 +21,8 @@
 + (NSInteger)getUserSubscribeCount:(NSString *)userId;
 // 获取用户订阅的所有主播id
 + (NSArray<NSString*>*)getUserSubscribeIds: (NSString *)userId;
+// 获取某主播的详细信息
++ (NSDictionary *)getUpInfo: (NSString *)upId;
 // 获取用户粉丝的数量
 + (NSInteger)getUserFansCount:(NSString *)userId;
 // 获取用户所有粉丝的id
@@ -47,7 +49,7 @@
 + (void)sendGiftWithNum:(NSString *)senderId to:(NSString *)receiverId gift1: (NSInteger)num1 gift2: (NSInteger) num2
                   gift3: (NSInteger) num3 gift4: (NSInteger) num4 gift5: (NSInteger) num5 gift6: (NSInteger)num6;
 // 礼物信息拉取
-// 返回格式为 giftName: xxxx,  giftNumber: xxxx, senderId: xxxx 的JSON数组
+// 返回格式为 giftName: xxxx,  giftNumber: xxxx, senderId: xxxx 的JSON数组 , dateTime: NSDate类型
 + (NSArray *)getGiftMessageArray: (NSString *)userId;
 // 删除所有礼物消息
 + (BOOL)deleteAllGiftMessage: (NSString *)userId;
