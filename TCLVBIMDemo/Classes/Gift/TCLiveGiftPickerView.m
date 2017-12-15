@@ -111,6 +111,7 @@
         _giftNumberInput = [[UITextField alloc] init];
         _giftNumberInput.backgroundColor = [UIColor whiteColor];
         _giftNumberInput.keyboardType = UIKeyboardTypeNumberPad;
+        _giftNumberInput.textAlignment = NSTextAlignmentCenter;
         _giftNumberInput.center = CGPointMake(btnAdd.center.x - 15 - 20, 25);
         _giftNumberInput.bounds = CGRectMake(0, 0, 40, 30);
         _giftNumberInput.layer.cornerRadius = 5;

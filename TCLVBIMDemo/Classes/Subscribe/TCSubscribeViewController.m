@@ -11,18 +11,27 @@
 #import "TCSubscribeModel.h"
 #import "TCSubscribeFrame.h"
 #import "TCUserInfoModel.h"
+#import "TCLiveListModel.h"
+#import "TCPlayViewController.h"
+#import "TCPlayViewController_LinkMic.h"
 
 
 @interface TCSubscribeViewController (){
     NSMutableArray *_subFrames;
     NSMutableArray* upIDs;
     UIView *_nullDataView;
+    NSMutableArray *_liveList;
 }
+
+@property(nonatomic,retain) TCPlayViewController *playVC;
+
 @end
 
 
 
-@implementation TCSubscribeViewController
+@implementation TCSubscribeViewController {
+    BOOL             _hasEnterplayVC;
+}
 
 - (void)viewDidLoad {
     [super viewDidLoad];
@@ -57,9 +66,18 @@
 
 - (void)viewWillAppear:(BOOL)animated{
     [super viewWillAppear:true];
+
+    [self.navigationController setNavigationBarHidden:NO];
+    self.title = @"订阅";
+
+    if ([self.delegate respondsToSelector:@selector(getLiveList)]) {
+        _liveList = [self.delegate getLiveList];
+    }
+    NSLog(@"%d", _liveList.count);
     
     [self getUpInfoFromNetwork];
 }
+
 - (void)viewWillDisappear:(BOOL)animated{
     [super viewWillDisappear:true];
     
@@ -68,13 +86,18 @@
     [_subscriptionArry removeAllObjects];
 }
 
+- (void)viewDidDisappear:(BOOL)animated {
+    [super viewDidDisappear:animated];
+    _playVC = nil;
+    _hasEnterplayVC = NO;
+}
+
 - (void)didReceiveMemoryWarning {
     [super didReceiveMemoryWarning];
     // Dispose of any resources that can be recreated.
 }
 
 - (void)initNullView {
-    CGFloat SCREEN_WIDTH = [UIScreen mainScreen].bounds.size.width;
     CGFloat nullViewWidth   = 90;
     CGFloat nullViewHeight  = 115;
     CGFloat imageViewWidth  = 68;
@@ -189,7 +212,9 @@
                         upRoomName = @"";
                         className = @"";
                     }
-                    
+                    if (photoURL == nil) {
+                        photoURL = @"";
+                    }
                     NSDictionary* upInfo = @{@"name": upName,
                             @"imgUrl": photoURL,
                             @"title": upRoomName,
@@ -246,38 +271,44 @@
     return _subFrames.count;
 }
 
+- (void)tableView:(UITableView *)tableView didSelectRowAtIndexPath:(NSIndexPath *)indexPath {
+    TCLiveInfo *liveInfo;
+    for (TCLiveInfo *live in _liveList) {
+        if ([live.userid isEqualToString:upIDs[indexPath.row]]) {
+            liveInfo = live;
+            break;
+        }
+    }
+    if (liveInfo != nil) {
+        [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(playError:) name:kTCLivePlayError object:nil];
+        // MARK: 打开播放界面
+        if (_playVC == nil) {
+            _playVC = [[TCPlayViewController_LinkMic alloc] initWithPlayInfo:liveInfo videoIsReady:^{
+                if (!_hasEnterplayVC) {
+                    [[TCBaseAppDelegate sharedAppDelegate] pushViewController:_playVC animated:YES];
+                    _hasEnterplayVC = YES;
+                }
+            }];
+        }
+        [self performSelector:@selector(enterPlayVC:) withObject:_playVC afterDelay:0.5];
+    }
+}
+
 - (CGFloat)tableView:(UITableView *)tableView heightForRowAtIndexPath:(NSIndexPath *)indexPath{
     return [_subFrames[indexPath.row] cellHeight];
 }
 
-/*
- #pragma mark - Navigation
- 
- // In a storyboard-based application, you will often want to do a little preparation before navigation
- - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
- // Get the new view controller using [segue destinationViewController].
- // Pass the selected object to the new view controller.
- }
- */
+- (void)playError:(NSNotification *)noti {
+    [[NSNotificationCenter defaultCenter] removeObserver:self name:kTCLivePlayError object:nil];
+}
 
-//- (void)encodeWithCoder:(nonnull NSCoder *)aCoder {
-//    <#code#>
-//}
-//
-//- (void)didUpdateFocusInContext:(nonnull UIFocusUpdateContext *)context withAnimationCoordinator:(nonnull UIFocusAnimationCoordinator *)coordinator {
-//    <#code#>
-//}
-//
-//- (void)setNeedsFocusUpdate {
-//    <#code#>
-//}
-//
-//- (BOOL)shouldUpdateFocusInContext:(nonnull UIFocusUpdateContext *)context {
-//    <#code#>
-//}
-//
-//- (void)updateFocusIfNeeded {
-//    <#code#>
-//}
+-(void)enterPlayVC:(NSObject *)obj{
+    if (!_hasEnterplayVC) {
+        [[TCBaseAppDelegate sharedAppDelegate] pushViewController:_playVC animated:YES];
+        _hasEnterplayVC = YES;
+    }
+}
+
+
 
 @end

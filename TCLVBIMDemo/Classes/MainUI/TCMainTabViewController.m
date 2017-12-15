@@ -70,9 +70,9 @@ typedef enum : NSUInteger {
     _showVC.listener = self;
     
 
-    //TODO: 替换v1 v2两个 UIViewController
-    UIViewController *v1 = [TCSubscribeViewController new];
-    UIViewController *v2 = [TCMessageViewController new];
+    TCSubscribeViewController *v1 = [TCSubscribeViewController new];
+    v1.delegate = _showVC;
+    TCMessageViewController *v2 = [TCMessageViewController new];
     UIViewController *_ = [UIViewController new];
     UIViewController *v3 = [TCUserInfoViewController new];
     self.viewControllers = @[_showVC,v1, _, v2, v3];

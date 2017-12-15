@@ -335,9 +335,11 @@
         [[UIApplication sharedApplication] setIdleTimerDisabled:YES];
     }
 
+    TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
+
     if (![LCManager ifUpTableContainsUser:_liveInfo.userid]) {
-        [LCManager addUp:_liveInfo.userid withRoomCover:_liveInfo.userinfo.frontcover
-                nickname:_liveInfo.userinfo.nickname userPhoto:_liveInfo.userinfo.headpic roomName:_liveInfo.title];
+        [LCManager addUp:_liveInfo.userid withRoomCover:profile.coverURL
+                nickname:_liveInfo.userinfo.nickname userPhoto:profile.faceURL roomName:_liveInfo.title];
     } else {
         [LCManager deleteUp:_liveInfo.userid];
         [LCManager addUp:_liveInfo.userid withRoomCover:_liveInfo.userinfo.frontcover

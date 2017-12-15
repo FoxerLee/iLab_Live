@@ -138,7 +138,7 @@ extern BOOL g_bNeedEnterPushSettingView;
     chargeBtn.titleLabel.font = [UIFont systemFontOfSize:16];
     chargeBtn.backgroundColor = [UIColor whiteColor];
     [chargeBtn setTitle:@"充值" forState:UIControlStateNormal];
-    [chargeBtn setTintColor:[UIColor blackColor]];
+    [chargeBtn setTintColor:RGB(171,59,158)];
     [chargeBtn addTarget:self action:@selector(onChargeBtnClick:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:chargeBtn];
 
@@ -148,7 +148,7 @@ extern BOOL g_bNeedEnterPushSettingView;
     button.backgroundColor = [UIColor whiteColor];
     button.titleLabel.font = [UIFont systemFontOfSize:16];
     [button setTitle:@"退出登录" forState: UIControlStateNormal];
-    [button setTitleColor:[UIColor blackColor]forState:UIControlStateNormal];
+    [button setTitleColor:RGB(190, 60, 50)forState:UIControlStateNormal];
     [button addTarget:self action:@selector(logout:) forControlEvents:UIControlEventTouchUpInside];
     [self.view addSubview:button];
     
@@ -228,8 +228,8 @@ extern BOOL g_bNeedEnterPushSettingView;
 }
 
 - (void)setupBtn {
-    NSString *subscribeTitle = [NSString stringWithFormat:@"我的订阅：%d", _subscribeCount];
-    NSString *fansTitle = [NSString stringWithFormat:@"我的粉丝：%d", _fansCount];
+    NSString *subscribeTitle = [NSString stringWithFormat:@"我的订阅 %d", _subscribeCount];
+    NSString *fansTitle = [NSString stringWithFormat:@"我的粉丝 %d", _fansCount];
 
     [myFollow setTitle:subscribeTitle forState:UIControlStateNormal];
     [myFans setTitle:fansTitle forState:UIControlStateNormal];

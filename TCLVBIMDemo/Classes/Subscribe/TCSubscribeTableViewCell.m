@@ -9,6 +9,7 @@
 #import "TCSubscribeTableViewCell.h"
 #import "TCSubscribeFrame.h"
 #import "TCSubscribeModel.h"
+#import "UIImageView+WebCache.h"
 
 #define lblWidth 50
 #define lblHeight 10
@@ -55,7 +56,10 @@
     
     subView = [[UIImageView alloc]init];
 //    subView.image = [UIImage imageNamed:@"subView.png"];
-    subView.image = [UIImage imageNamed:@"bg.jpg"];
+//    [subView sd_setImageWithURL:[NSURL URLWithString:sub.subHeadImageUrl] placeholderImage:[UIImage imageNamed:@"bg.jpg"]];
+    [subView sd_setImageWithURL:[NSURL URLWithString:[TCUtil transImageURL2HttpsURL:sub.subHeadImageUrl]]
+               placeholderImage:[UIImage imageNamed:@"bg.jpg"]];
+
     [self.contentView addSubview:subView];
     
     

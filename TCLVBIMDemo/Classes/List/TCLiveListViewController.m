@@ -22,6 +22,7 @@
 #import "NSString+Common.h"
 #import "LCManager.h"
 #import "TCUserInfoModel.h"
+#import "TCSubscribeViewController.h"
 
 
 @interface TCLiveListViewController ()<UICollectionViewDelegate,UICollectionViewDataSource,
@@ -129,6 +130,10 @@
     if (goldCount < 0) {
         [LCManager initUser:profile.identifier Balance:kInitBalance];
     }
+}
+
+- (NSMutableArray *)getLiveList {
+    return self.lives;
 }
 
 /**

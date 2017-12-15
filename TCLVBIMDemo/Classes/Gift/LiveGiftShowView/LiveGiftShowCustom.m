@@ -33,7 +33,7 @@ static LiveGiftAppearMode live_appearModel = LiveGiftAppearModeLeft;
 #pragma mark - 初始化
 + (instancetype)addToView:(UIView *)superView{
     LiveGiftShowCustom * v = [[LiveGiftShowCustom alloc]init];
-    v.kExchangeAnimationTime = 0.25;
+    v.kExchangeAnimationTime = 0.15;
     v.kAppearAnimationTime = 0.5;
     v.addMode = LiveGiftAddModeReplace;
     [superView addSubview:v];

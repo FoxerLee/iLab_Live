@@ -7,6 +7,14 @@
 //
 
 #import <UIKit/UIKit.h>
+
+@protocol TCSubscribeViewControllerDelegate <NSObject>
+
+- (NSMutableArray *)getLiveList;
+
+@end
+
+
 typedef void(^Complete)();
 
 @interface TCSubscribeViewController: UIViewController<UITableViewDelegate, UITableViewDataSource>
@@ -16,5 +24,7 @@ typedef void(^Complete)();
 @property (strong, nonatomic) NSMutableArray *subscriptionArry;
 
 @property (copy, nonatomic) Complete complete;
+
+@property (nonatomic, weak) id<TCSubscribeViewControllerDelegate> delegate;
 
 @end
