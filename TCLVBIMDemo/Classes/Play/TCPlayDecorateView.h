@@ -47,6 +47,8 @@
 
 @property(nonatomic,retain)   AVIMMsgHandler    *msgHandler;
 
+@property (nonatomic, retain)TCShowLiveTopView     *topView;
+
 -(instancetype)initWithFrame:(CGRect)frame liveInfo:(TCLiveInfo *)liveInfo withLinkMic:(BOOL)linkmic;
 
 -(void)setViewerCount:(int)viewerCount likeCount:(int)likeCount;
@@ -56,5 +58,7 @@
 -(void)initAudienceList;
 
 -(void)keyboardFrameDidChange:(NSNotification*)notice;
+
+-(void)bulletMsg:(TCMsgModel *)msgModel;
 
 @end

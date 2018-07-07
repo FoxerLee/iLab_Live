@@ -87,8 +87,51 @@
     [self initMainUI];
     [self setupGestures];
     [self setup: VideoType_LIVE_Online];
+//    [self timer];
+}
+// 测试函数
+- (void)timer {
+    double delayInSeconds = 10.0;
+    dispatch_time_t popTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+    dispatch_after(popTime, dispatch_get_main_queue(), ^{
+        [self test];
+    });
+    NSLog(@"test");
 }
 
+- (void)test {
+    NSArray *robots = [self getRobots];
+    [[TIMFriendshipManager sharedInstance] GetUsersProfile:robots succ:^(NSArray *friends) {
+        if (friends.count) {
+            for (TIMUserProfile *robot in friends) {
+                NSLog(@"pic: %@\n", robot.identifier);
+            }
+        }
+        NSLog(@"haha");
+    } fail:^(int code, NSString *msg) {
+        NSLog(@"%@", msg);
+    }];
+}
+
+- (NSMutableArray *)getRobots {
+    NSMutableArray *_robotsArray = [NSMutableArray array];
+    int minRobots = 2;
+    int maxRobots = 10;
+    int minRobotId = 0;
+    int maxRobotId = 99;
+    int robotNum = arc4random()%(maxRobots-minRobots+1) + minRobots;
+    int count = 0;
+    while (count < robotNum) {
+        int id = arc4random() % (maxRobotId - minRobotId + 1) + minRobotId;
+        NSString *robotId = [NSString stringWithFormat:@"robot%02d", id];
+        if (![_robotsArray containsObject:robotId]) {
+            [_robotsArray addObject:robotId];
+            count++;
+        }
+    }
+    return _robotsArray;
+}
+// 测试函数结束
 
 -(void)viewWillAppear:(BOOL)animated{
     [super viewWillAppear:animated];

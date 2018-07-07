@@ -44,7 +44,7 @@
 
 @implementation TCPushDecorateView
 {
-    TCShowLiveTopView     *_topView;
+//    TCShowLiveTopView     *_topView;
     TCPushShowResultView  *_resultView;
     TCAudienceListTableView *_audienceTableView;
     TCMsgListTableView    *_msgTableView;
@@ -1387,35 +1387,42 @@
             NSString *giftName = giftArray[0];
             NSInteger giftNumber = [giftArray[1] intValue];
             NSLog(@"received gift: %@, number: %d", giftName, giftNumber);
-            NSUInteger index = 0;
-            if ([giftName equalsString:@"棒棒糖"]) {
-                index = 0;
-            } else if ([giftName equalsString:@"生日蛋糕"]) {
-                index = 1;
-            } else if ([giftName equalsString:@"钻戒"]) {
-                index = 2;
-            } else if ([giftName equalsString:@"跑车"]) {
-                index = 3;
-            } else if ([giftName equalsString:@"豪华游艇"]) {
-                index = 4;
-            } else if ([giftName equalsString:@"火箭"]) {
-                index = 5;
-            }
-            LiveUserModel *user = [[LiveUserModel alloc] init];
-            user.name = info.imUserName;
-            user.iconUrl = info.imUserIconUrl;
-            LiveGiftListModel *giftModel = self.giftArr[index];
-            _recievedGold += giftModel.goldCount.intValue*giftNumber;
-            LiveGiftShowModel *model = [LiveGiftShowModel giftModel:giftModel userModel:user];
-            model.toNumber = (NSUInteger) giftNumber;
-            [self.customGiftShow animatedWithGiftModel:model];
-            [self giftAnimate:giftName];
+            TCUserInfoData *userInfo = [[TCUserInfoData alloc] init];
+            userInfo.identifier = info.imUserId;
+            userInfo.nickName = info.imUserName;
+            userInfo.faceURL = info.imUserIconUrl;
+            [self showGift:userInfo withName:giftName andNum:giftNumber];
             break;
         }
-            
         default:
             break;
     }
+}
+
+- (void)showGift: (TCUserInfoData *)userInfo withName:(NSString *)giftName andNum:(NSInteger)giftNumber {
+    NSUInteger index = 0;
+    if ([giftName equalsString:@"棒棒糖"]) {
+        index = 0;
+    } else if ([giftName equalsString:@"生日蛋糕"]) {
+        index = 1;
+    } else if ([giftName equalsString:@"钻戒"]) {
+        index = 2;
+    } else if ([giftName equalsString:@"跑车"]) {
+        index = 3;
+    } else if ([giftName equalsString:@"豪华游艇"]) {
+        index = 4;
+    } else if ([giftName equalsString:@"火箭"]) {
+        index = 5;
+    }
+    LiveUserModel *user = [[LiveUserModel alloc] init];
+    user.name = userInfo.nickName;
+    user.iconUrl = userInfo.faceURL;
+    LiveGiftListModel *giftModel = self.giftArr[index];
+    _recievedGold += giftModel.goldCount.intValue*giftNumber;
+    LiveGiftShowModel *model = [LiveGiftShowModel giftModel:giftModel userModel:user];
+    model.toNumber = (NSUInteger) giftNumber;
+    [self.customGiftShow animatedWithGiftModel:model];
+    [self giftAnimate:giftName];
 }
 
 - (void)giftAnimate: (NSString *)giftName {

@@ -82,7 +82,14 @@
         return;
     }
     
-    NSDictionary* dict = @{@"userAction" : @(cmd), @"userId" : TC_PROTECT_STR(userId), @"nickName" : TC_PROTECT_STR(nickName), @"headPic" : TC_PROTECT_STR(headPic), @"msg" : TC_PROTECT_STR(msgContent)};
+    NSDictionary* dict = @{
+            @"userAction" : @(cmd),
+            @"userId" : TC_PROTECT_STR(userId),
+            @"nickName" : TC_PROTECT_STR(nickName),
+            @"headPic" : TC_PROTECT_STR(headPic),
+            @"msg" : TC_PROTECT_STR(msgContent)
+    };
+
     
     NSData* data = [TCUtil dictionary2JsonData:dict];
     NSString *content = [[NSString alloc] initWithData:data encoding:NSUTF8StringEncoding];

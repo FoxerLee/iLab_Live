@@ -200,7 +200,9 @@
     [[TCPlayerModel sharedInstance] fetchGroupMemberList:_liveInfo.userid groupId:realGroupId handler:^(int errCode, int memberCount, NSArray *memberList) {
         if (0 == errCode)
         {
-            _dataArray = [[NSMutableArray alloc] init];
+            if (!_dataArray) {
+                _dataArray = [[NSMutableArray alloc] init];
+            }
             if (memberList)
             {
                 for (TCGroupMemberInfo *memInfo in memberList)
@@ -236,6 +238,9 @@
 }
 
 -(void)refreshAudienceList:(TCMsgModel *)model{
+    if (!_dataArray) {
+        _dataArray = [NSMutableArray array];
+    }
     if (model.userId == nil) {
         return;
     }

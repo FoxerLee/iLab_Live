@@ -107,7 +107,6 @@
     _audienceTableView = [[TCAudienceListTableView alloc] initWithFrame:CGRectMake(_topView.right + 10 +audience_width / 2 - IMAGE_SIZE / 2 ,_topView.center.y -  audience_width / 2, _topView.height, audience_width) style:UITableViewStyleGrouped liveInfo:_liveInfo];
     _audienceTableView.transform = CGAffineTransformMakeRotation(- M_PI/2);
     _audienceTableView.audienceListDelegate = self;
-    
     [self addSubview:_audienceTableView];
 }
 
@@ -814,7 +813,6 @@
             [_bulletViewOne bulletNewMsg:msgModel];
         }
     }
-    
     if (msgModel.msgType == TCMsgModelType_MemberEnterRoom || msgModel.msgType == TCMsgModelType_MemberQuitRoom) {
         [_audienceTableView refreshAudienceList:msgModel];
     }

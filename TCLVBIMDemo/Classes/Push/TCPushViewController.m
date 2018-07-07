@@ -22,6 +22,7 @@
 #import "TCConstants.h"
 #import "NSString+Common.h"
 #import "LCManager.h"
+#import "TCPlayerModel.h"
 #import <CWStatusBarNotification/CWStatusBarNotification.h>
 #if POD_PITU
 #import "MCCameraDynamicView.h"
@@ -67,6 +68,8 @@
     AVIMMsgHandler *_msgHandler;
     
     CWStatusBarNotification *_notification;
+
+    NSMutableArray *_robotsArray;
 }
 
 - (instancetype)initWithPublishInfo:(TCLiveInfo *)liveInfo {
@@ -103,6 +106,7 @@
     
     _logicView = [[TCPushDecorateView alloc] initWithFrame:self.view.frame];
     _logicView.delegate = self;
+
     [self.view addSubview:_logicView];
     
     _txLivePushonfig = [[TXLivePushConfig alloc] init];
@@ -127,6 +131,7 @@
     TCUserInfoData  *profile = [[TCUserInfoModel sharedInstance] getUserProfile];
     _liveInfo.userinfo.headpic = profile.faceURL;
     _liveInfo.userinfo.nickname = profile.nickName;
+    _liveInfo.userid = profile.identifier;
     
     __weak typeof(self) weakSelf = self;
     _msgHandler = [[AVIMMsgHandler alloc] init];
@@ -158,7 +163,12 @@
                                                         [_txLivePublisher setBeautyFilterDepth:_beauty_level setWhiteningFilterDepth:_whitening_level];
                                                         _torch_switch= NO;
                                                         _log_switch = NO;
-                                                        
+
+                                                        //添加机器人
+                                                        if (kIfRobots) {
+                                                            [self addRobots];
+                                                        }
+
                                                         //启动rtmp
                                                         _rtmpUrl =  _liveInfo.playurl;
                                                         _liveInfo.timestamp = timestamp;
@@ -188,6 +198,85 @@
 #if POD_PITU
     [[NSNotificationCenter defaultCenter] addObserver:self selector:@selector(packageDownloadProgress:) name:kMC_NOTI_ONLINEMANAGER_PACKAGE_PROGRESS object:nil];
 #endif
+}
+
+//TODO:添加机器人
+- (void)addRobots {
+    double delayInSeconds = 10.0;
+    dispatch_time_t delayTime = dispatch_time(DISPATCH_TIME_NOW, (int64_t)(delayInSeconds * NSEC_PER_SEC));
+    dispatch_after(delayTime, dispatch_get_main_queue(), ^{
+        [self getRobots];
+    });
+}
+
+- (void)getRobots {
+    if (_robotsArray) {
+        return;
+    }
+    _robotsArray = [NSMutableArray array];
+    NSMutableArray *robotsIdArray = [NSMutableArray array];
+    int minRobotNum = 2;
+    int maxRobotNum = 10;
+    int minRobotId = 0;
+    int maxRobotId = 99;
+    int robotNum = arc4random()%(maxRobotNum-minRobotNum+1) + minRobotNum;
+    int count = 0;
+    while (count < robotNum) {
+        int id = arc4random() % (maxRobotId - minRobotId + 1) + minRobotId;
+        NSString *robotId = [NSString stringWithFormat:@"robot%02d", id];
+        if (![robotsIdArray containsObject:robotId]) {
+            [robotsIdArray addObject:robotId];
+            count++;
+        }
+    }
+    [[TIMFriendshipManager sharedInstance] GetUsersProfile:robotsIdArray succ:^(NSArray *friends) {
+        for (TIMUserProfile *robot in friends) {
+            TCUserInfoData *info = [[TCUserInfoData alloc] init];
+            info.identifier = robot.identifier;
+            if (!robot.nickname || [robot.nickname  isEqual: @""]) {
+                info.nickName = robot.identifier;
+            } else {
+                info.nickName = robot.nickname;
+            }
+            info.faceURL = robot.faceURL;
+            [_robotsArray addObject:info];
+        }
+        dispatch_async(dispatch_get_main_queue(), ^{
+            [self sendRobotMsg];
+        });
+    } fail:^(int code, NSString *msg) {
+        NSLog(@"%@\n", msg);
+    }];
+}
+
+- (void)sendRobotMsg {
+    // 机器人进入的时间间隔区间
+    int minTime = 3;
+    int maxTime = 30;
+    for (TCUserInfoData *info in _robotsArray) {
+        int delayTime = arc4random() % (maxTime-minTime+1) + minTime;
+        [NSTimer scheduledTimerWithTimeInterval:(double)delayTime repeats:false block:^(NSTimer *timer) {
+            [[TCPlayerModel sharedInstance] enterGroup:info.identifier type:_liveInfo.type liveUserId:_liveInfo.userid groupId:_liveInfo.groupid
+                                              nickName:info.nickName headPic:info.faceURL handler:^(int errCode) {}];
+            TCMsgModel *msgModel = [[TCMsgModel alloc] init];
+            msgModel.userId = info.identifier;
+            msgModel.userName = info.nickName;
+            msgModel.userMsg  =  @"加入直播";
+            msgModel.userHeadImageUrl = info.faceURL;
+            msgModel.msgType = TCMsgModelType_MemberEnterRoom;
+            [_logicView bulletMsg:msgModel];
+            [_logicView.topView onUserEnterLiveRoom];
+            [_msgHandler sendEnterLiveRoomMessage:info.identifier nickName:info.nickName headPic:info.faceURL];
+            [self showGift:info withName:@"棒棒糖" andNum:10];
+            [_msgHandler sendTextMessage:info.identifier nickName:info.nickName headPic:info.faceURL msg:@"666"];
+        }];
+    }
+}
+
+- (void)showGift: (TCUserInfoData *)userInfo withName:(NSString *)giftName andNum:(NSInteger)giftNumber {
+    [_logicView showGift:userInfo withName:giftName andNum:giftNumber];
+    NSString *msg = [NSString stringWithFormat:@"%@,%@", giftName, @(giftNumber)];
+    [_msgHandler sendGiftMessage:userInfo.identifier nickName:userInfo.nickName headPic:userInfo.faceURL msg:msg];
 }
 
 - (void)viewWillAppear:(BOOL)animated

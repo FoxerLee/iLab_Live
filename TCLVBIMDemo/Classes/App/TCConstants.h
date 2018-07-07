@@ -88,6 +88,7 @@
 // 初始数据
 #define kInitBalance  20000
 #define kIfChargeTest YES
+#define kIfRobots YES
 
 #ifndef POD_PITU
 #define POD_PITU 0

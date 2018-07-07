@@ -66,11 +66,17 @@ typedef NS_ENUM(NSInteger,TCLVFilterType) {
 
 @property (nonatomic, retain)UIView     *vMusicPanel;
 
+@property (nonatomic, retain)TCShowLiveTopView     *topView;
+
 - (void)setPublishInfo:(TCPublishInfo *)publishInfo;
 
 - (void)closeVCWithError:(NSString *)msg Alert:(BOOL)isAlert Result:(BOOL)isShowResult;
 
 - (void)enableMix:(BOOL)enable;
+
+-(void)bulletMsg:(TCMsgModel *)msgModel;
+
+- (void)showGift: (TCUserInfoData *)userInfo withName:(NSString *)giftName andNum:(NSInteger)giftNumber;
 
 @end
 
